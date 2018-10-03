@@ -58,7 +58,7 @@ function geothermometer.show_rel_temp(itemstack, user, pointed_thing)
 		end
 	end
 	minetest.chat_send_player(player_name,
-		"Geothermometer: reading for this block is " ..
+		"[Geothermometer] Temperature gradient for this block is " ..
 		string.format("%+.4f", temp_scale * temp_var))
 	return nil
 end
