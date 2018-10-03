@@ -9,3 +9,9 @@ biogasmachines:
 furnacemonitor:
 	* add
 
+mineralscanner:
+	* add portable version of mineral_detector based
+	  on geothermometer
+	* selectable range 1-10
+	* all ores including moreores
+
