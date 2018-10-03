@@ -1,0 +1,11 @@
+
+moderntables:
+	* add half-height table
+	* add table with storage (2x8)
+
+biogasmachines:
+	* Coal Gasifier, Biogas Smelter - behaviour based on Quarry and Grinder
+
+furnacemonitor:
+	* add
+

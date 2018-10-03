@@ -1,0 +1,16 @@
+*.o
+*.a
+.DS_Store
+.*.swp
+*.orig
+*.rej
+*.ses
+.depend
+*~
+.#*
+*#
+.emacs.desktop*
+TAGS*~
+*.log
+*.psf
+test*lua
