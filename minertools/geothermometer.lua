@@ -6,6 +6,7 @@
 	Principle of calculations:
 	heat energy dissipates with square distance from source (twice the distance
 	four times less heat)
+	Works only on "natural" blocks like dirt, stone, sand and ores
 
 	Calculations explained:
 	* initial block temperature variation = 0.0
@@ -31,11 +32,28 @@ local temp_scale = 50.0
 -- Helper functions
 -- ****************
 
+-- check if node is of type that device can scan
+-- (only nodes of natural origin can be analyzed properly)
+local function is_mineral(name)
+	if name == nil then return false end
+	if minetest.get_item_group(name, "sand") > 0 then return true end
+	if minetest.get_item_group(name, "soil") > 0 then return true end
+	if minetest.get_item_group(name, "stone") > 0 then return true end
+	if string.match(name, "^default:stone_with_") then return true end
+	if minetest.get_modpath("moreores") then
+		if string.match(name, "^moreores:mineral_") then
+			return true
+		end
+	end
+	return false
+end
+
 -- calculate and show relative temperature
 function geothermometer.show_rel_temp(itemstack, user, pointed_thing)
 	if pointed_thing.type ~= "node" then return nil end
-	local player_name = user:get_player_name()
 	local node_pos = vector.new(pointed_thing.under)
+	if not is_mineral(minetest.get_node(node_pos).name) then return nil end
+	local player_name = user:get_player_name()
 	local scan_vec = vector.new({x = scan_range, y = scan_range,
 		z = scan_range})
 	local scan_pos1 = vector.subtract(node_pos, scan_vec)
