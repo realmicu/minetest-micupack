@@ -1,0 +1,5 @@
+Add electronic devices designed for professional miners, including:
+portable geothermometer that shows temperature variations
+of solid blocks (water and lava affect block relative temperature
+- water cools it down while lava warms it up; useful for underground
+mining to search - or avoid - flooded caverns or lava pools)

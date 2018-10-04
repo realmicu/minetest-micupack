@@ -1,4 +1,0 @@
-Adds portable geothermometer that shows temperature variations
-of solid blocks. Water and lava affect block relative temperature
-(water cools it down while lava warms it up). Useful for underground
-mining to search (or avoid) flooded caverns or lava pools.

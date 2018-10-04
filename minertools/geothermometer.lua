@@ -67,11 +67,11 @@ end
 -- Register Tool
 -- *************
 
-minetest.register_tool("geothermometer:geothermometer", {
+minetest.register_tool("minertools:geothermometer", {
 	description = "Geothermometer",
-	wield_image = "geothermometer_hand.png",
+	wield_image = "minertools_geothermometer_hand.png",
 	wield_scale = { x = 1, y = 1, z = 2 },
-	inventory_image = "geothermometer_inv.png",
+	inventory_image = "minertools_geothermometer_inv.png",
 	stack_max = 1,
 	range = tool_range,
 	on_use = geothermometer.show_rel_temp
@@ -82,12 +82,12 @@ minetest.register_tool("geothermometer:geothermometer", {
 -- ************
 
 minetest.register_craft({
-	output = "geothermometer:geothermometer",
+	output = "minertools:geothermometer",
 	type = "shaped",
 	recipe = {
 		{ "default:steel_ingot", "default:diamond", "default:steel_ingot" },
-		{ "default:steel_ingot", "default:copper_ingot", "default:steel_ingot" },
-		{ "default:mese_crystal", "default:gold_ingot", "default:mese_crystal" },
+		{ "default:steel_ingot", "default:mese_crystal", "default:steel_ingot" },
+		{ "default:steel_ingot", "minertools:mining_chip", "default:steel_ingot" },
 	},
 })
 
