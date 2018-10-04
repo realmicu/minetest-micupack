@@ -27,6 +27,10 @@ local geothermometer = {}
 local tool_range = 8
 local scan_range = 10
 local temp_scale = 50.0
+local msg_white = minetest.get_color_escape_sequence("#FFFFFF")
+local msg_hot = minetest.get_color_escape_sequence("#FFC0C0")
+local msg_cold = minetest.get_color_escape_sequence("#C0C0FF")
+local msg_yellow = minetest.get_color_escape_sequence("#FFFF00")
 
 -- ****************
 -- Helper functions
@@ -48,12 +52,30 @@ local function is_mineral(name)
 	return false
 end
 
+-- produce sounds
+local function beep_ok(player_name)
+	minetest.sound_play("minertools_beep_ok", {
+		to_player = player_name,
+		gain = 0.8,
+	})
+end
+
+local function beep_err(player_name)
+	minetest.sound_play("minertools_beep_err", {
+		to_player = player_name,
+		gain = 0.5,
+	})
+end
+
 -- calculate and show relative temperature
 function geothermometer.show_rel_temp(itemstack, user, pointed_thing)
 	if pointed_thing.type ~= "node" then return nil end
-	local node_pos = vector.new(pointed_thing.under)
-	if not is_mineral(minetest.get_node(node_pos).name) then return nil end
 	local player_name = user:get_player_name()
+	local node_pos = vector.new(pointed_thing.under)
+	if not is_mineral(minetest.get_node(node_pos).name) then
+		beep_err(player_name)
+		return nil
+	end
 	local scan_vec = vector.new({x = scan_range, y = scan_range,
 		z = scan_range})
 	local scan_pos1 = vector.subtract(node_pos, scan_vec)
@@ -75,13 +97,16 @@ function geothermometer.show_rel_temp(itemstack, user, pointed_thing)
 			temp_var = temp_var + 1 / ( vd * vd )
 		end
 	end
-	minetest.sound_play("minertools_beep", {
-		to_player = player_name,
-		gain = 0.8,
-	})
+	beep_ok(player_name)
+	local msg_val_clr = msg_white
+	if temp_var < 0 then msg_val_clr = msg_cold
+	elseif temp_var > 0 then msg_val_clr = msg_hot
+	end
 	minetest.chat_send_player(player_name,
-		"[Geothermometer] Temperature gradient for this block is " ..
-		string.format("%+.4f", temp_scale * temp_var))
+		msg_yellow .. "[Geothermometer]" .. msg_white ..
+		" Temperature gradient for this block is " ..
+		msg_val_clr .. string.format("%+.4f", temp_scale * temp_var) ..
+		msg_white)
 	return nil
 end
 
