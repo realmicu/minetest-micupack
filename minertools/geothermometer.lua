@@ -75,6 +75,10 @@ function geothermometer.show_rel_temp(itemstack, user, pointed_thing)
 			temp_var = temp_var + 1 / ( vd * vd )
 		end
 	end
+	minetest.sound_play("minertools_beep", {
+		to_player = player_name,
+		gain = 0.8,
+	})
 	minetest.chat_send_player(player_name,
 		"[Geothermometer] Temperature gradient for this block is " ..
 		string.format("%+.4f", temp_scale * temp_var))
