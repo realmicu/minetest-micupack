@@ -53,63 +53,14 @@ for i, _ in pairs(ore_list) do
 end
 local head_vec = vector.new({x = 0, y = 1, z = 0})
 
--- ****************
--- Helper functions
--- ****************
-
--- produce sound
-local function sound_pulse(player_name)
-	minetest.sound_play("minertools_pulse", {
-		to_player = player_name,
-		gain = 0.8,
-	})
-end
-
-local function sound_click(player_name)
-	minetest.sound_play("minertools_click", {
-		to_player = player_name,
-		gain = 0.6,
-	})
-end
-
--- check if node includes obsidian
-local function has_obsidian(name)
-	if name == nil then return false end
-	if string.match(name, "^default:obsidian") then return true end
-	if minetest.get_modpath("stairs") then	-- part of minetest game now
-                if string.match(name, "^stairs:stair_obsidian") or
-		   string.match(name, "^stairs:slab_obsidian") then
-                        return true
-                end
-        end
-        return false
-end
-
 -- scan for selected ore in front of device
 function mineralfinder.scan_for_mineral(itemstack, user, pointed_thing)
 	local player_name = user:get_player_name()
 	local head_pos = vector.add(vector.round(user:getpos()), head_vec)
 	local look_dir = user:get_look_dir()  -- normalized vec (x,y,z = -1..1)
-	local node = {}
-	local pos_vec = {}
-	local last_vec = nil
-	local orecount = 0
-	local obsblock = false
-	for i = 1, scan_range, 1 do
-		pos_vec = vector.add(head_pos, vector.round(vector.multiply(look_dir, i)))
-		if not last_vec or not vector.equals(pos_vec, last_vec) then
-			node = minetest.get_node_or_nil(pos_vec)
-			if node then
-				if node.name == ore_stones[cur_stone_idx] then
-					orecount = orecount + 1
-				elseif has_obsidian(node.name) then
-					obsblock = true
-					break
-				end
-			end
-			last_vec = pos_vec  -- protects against double count
-		end
-	end
+	local orecount, obsblock = minertools.dir_mineral_scan(head_pos,
+				   scan_range, look_dir,
+				   ore_stones[cur_stone_idx])
 	local oremsg = ""
 	if orecount > 0 then oremsg = msg_plus
 	else oremsg = msg_zero end
@@ -118,7 +69,7 @@ function mineralfinder.scan_for_mineral(itemstack, user, pointed_thing)
 		oremsg = oremsg .. msg_warn ..
 			 " (warning - scan incomplete, blocked by obsidian)"
 	end
-	sound_pulse(player_name)
+	minertools.play_pulse(player_name)
 	minetest.chat_send_player(player_name,
 		msg_yellow .. "[MineralFinder]" .. msg_white ..
 		" Scan result for " .. msg_zero ..
@@ -130,7 +81,7 @@ end
 
 function mineralfinder.change_mineral_type(itemstack, user_placer, pointed_thing)
 	local player_name = user_placer:get_player_name()
-	sound_click(player_name)
+	minertools.play_click(player_name)
 	cur_stone_idx = cur_stone_idx + 1
 	if cur_stone_idx > #ore_stones then
 		cur_stone_idx = 1

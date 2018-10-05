@@ -43,34 +43,11 @@ for i, _ in pairs(ore_list) do
 	ore_stones[#ore_stones + 1] = i
 end
 
--- ****************
--- Helper functions
--- ****************
-
--- produce sound
-local function sound_scan(player_name)
-	minetest.sound_play("minertools_scan", {
-		to_player = player_name,
-		gain = 0.8,
-	})
-end
-
-local function sound_range(player_name)
-	minetest.sound_play("minertools_click", {
-		to_player = player_name,
-		gain = 0.6,
-	})
-end
-
 -- scan for ores with center at current player position
 function mineralscanner.scan_for_minerals(itemstack, user, pointed_thing)
 	local player_name = user:get_player_name()
 	local player_pos = vector.round(user:getpos())
-	local scan_vec = vector.new({x = scan_range, y = scan_range,
-		z = scan_range})
-	local scan_pos1 = vector.subtract(player_pos, scan_vec)
-	local scan_pos2 = vector.add(player_pos, scan_vec)
-	local _, minerals = minetest.find_nodes_in_area(scan_pos1, scan_pos2, ore_stones)
+	minerals = minertools.area_mineral_scan(player_pos, scan_range, ore_stones)
 	local oremsg = ""
 	for orenode, orecount in pairs(minerals) do
 		local oms = ore_list[orenode] .. " = " .. orecount
@@ -82,7 +59,7 @@ function mineralscanner.scan_for_minerals(itemstack, user, pointed_thing)
 			oremsg = oms
 		end
 	end
-	sound_scan(player_name)
+	minertools.play_scan(player_name)
 	minetest.chat_send_player(player_name,
 		msg_yellow .. "[MineralScanner]" .. msg_white ..
 		" Scan results for cubic range " .. scan_range ..
@@ -92,7 +69,7 @@ end
 
 function mineralscanner.change_scan_range(itemstack, user_placer, pointed_thing)
 	local player_name = user_placer:get_player_name()
-	sound_range(player_name)
+	minertools.play_click(player_name)
 	scan_range = scan_range - 1
 	if scan_range == 0 then
 		scan_range = scan_range_max

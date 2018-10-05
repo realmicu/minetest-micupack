@@ -32,74 +32,17 @@ local msg_hot = minetest.get_color_escape_sequence("#FFC0C0")
 local msg_cold = minetest.get_color_escape_sequence("#C0C0FF")
 local msg_yellow = minetest.get_color_escape_sequence("#FFFF00")
 
--- ****************
--- Helper functions
--- ****************
-
--- check if node is of type that device can scan
--- (only nodes of natural origin can be analyzed properly)
-local function is_mineral(name)
-	if name == nil then return false end
-	if minetest.get_item_group(name, "sand") > 0 then return true end
-	if minetest.get_item_group(name, "soil") > 0 then return true end
-	if minetest.get_item_group(name, "stone") > 0 then return true end
-	if string.match(name, "^default:stone_with_") then return true end
-	if name == "default:gravel"
-		or name == "default:clay" then return true end
-	if minetest.get_modpath("moreores") then
-		if string.match(name, "^moreores:mineral_") then
-			return true
-		end
-	end
-	return false
-end
-
--- produce sounds
-local function beep_ok(player_name)
-	minetest.sound_play("minertools_beep_ok", {
-		to_player = player_name,
-		gain = 0.8,
-	})
-end
-
-local function beep_err(player_name)
-	minetest.sound_play("minertools_beep_err", {
-		to_player = player_name,
-		gain = 0.5,
-	})
-end
-
 -- calculate and show relative temperature
 function geothermometer.show_rel_temp(itemstack, user, pointed_thing)
 	if pointed_thing.type ~= "node" then return nil end
 	local player_name = user:get_player_name()
 	local node_pos = vector.new(pointed_thing.under)
-	if not is_mineral(minetest.get_node(node_pos).name) then
-		beep_err(player_name)
+	if not minertools.is_mineral(minetest.get_node(node_pos).name) then
+		minertools.play_beep_err(player_name)
 		return nil
 	end
-	local scan_vec = vector.new({x = scan_range, y = scan_range,
-		z = scan_range})
-	local scan_pos1 = vector.subtract(node_pos, scan_vec)
-	local scan_pos2 = vector.add(node_pos, scan_vec)
-	local water = minetest.find_nodes_in_area(scan_pos1, scan_pos2,
-		{ "group:water" })
-	local lava = minetest.find_nodes_in_area(scan_pos1, scan_pos2,
-		{ "group:lava" })
-	local temp_var = 0.0
-	for _, v in ipairs(water) do
-		local vd = vector.distance(node_pos, v)
-		if vd <= scan_range then 
-			temp_var = temp_var - 1 / ( vd * vd )
-		end
-	end
-	for _, v in ipairs(lava) do
-		local vd = vector.distance(node_pos, v)
-		if vd <= scan_range then 
-			temp_var = temp_var + 1 / ( vd * vd )
-		end
-	end
-	beep_ok(player_name)
+	local temp_var = minertools.calculate_rel_temp(node_pos, scan_range)
+	minertools.play_beep_ok(player_name)
 	local msg_val_clr = msg_white
 	if temp_var < 0 then msg_val_clr = msg_cold
 	elseif temp_var > 0 then msg_val_clr = msg_hot
