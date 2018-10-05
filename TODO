@@ -10,8 +10,6 @@ furnacemonitor:
 	* add
 
 minertools:
-	* add Portable Mining Computer (all-in-one combination of 3 tools)
 	* add Advanced Mining Assistant (upgraded PMC) with increased range
-	* AMA should require obsidian shards!
-	* for above, move detection functions to separate library lua file
+	* AMA should require obsidian
 
