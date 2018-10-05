@@ -47,7 +47,7 @@ end
 function mineralscanner.scan_for_minerals(itemstack, user, pointed_thing)
 	local player_name = user:get_player_name()
 	local player_pos = vector.round(user:getpos())
-	minerals = minertools.area_mineral_scan(player_pos, scan_range, ore_stones)
+	local minerals = minertools.area_mineral_scan(player_pos, scan_range, ore_stones)
 	local oremsg = ""
 	for orenode, orecount in pairs(minerals) do
 		local oms = ore_list[orenode] .. " = " .. orecount
