@@ -20,7 +20,7 @@ local mineralscanner = {}
 local tool_range = 0
 local scan_range_min = 1
 local scan_range_max = 8
-local scan_range = scan_range_min
+local scan_range = scan_range_max
 local msg_white = minetest.get_color_escape_sequence("#FFFFFF")
 local msg_yellow = minetest.get_color_escape_sequence("#FFFF00")
 local msg_zero = minetest.get_color_escape_sequence("#00FFFF")
@@ -93,9 +93,9 @@ end
 function mineralscanner.change_scan_range(itemstack, user_placer, pointed_thing)
 	local player_name = user_placer:get_player_name()
 	sound_range(player_name)
-	scan_range = scan_range + 1
-	if scan_range > scan_range_max then
-		scan_range = scan_range_min
+	scan_range = scan_range - 1
+	if scan_range == 0 then
+		scan_range = scan_range_max
 	end
 	minetest.chat_send_player(player_name,
 		msg_yellow .. "[MineralScanner]" .. msg_white ..
