@@ -7,6 +7,8 @@
 	provides feedback with ore quantity.
 	Notice: area scanned is cube (2 * range + 1) not sphere
 
+	Left click - scan and show results
+	Right click - change scan range
 
 ]]--
 
@@ -80,7 +82,7 @@ function mineralscanner.scan_for_minerals(itemstack, user, pointed_thing)
 			oremsg = oms
 		end
 	end
-	sound_scan()
+	sound_scan(player_name)
 	minetest.chat_send_player(player_name,
 		msg_yellow .. "[MineralScanner]" .. msg_white ..
 		" Scan results for cubic range " .. scan_range ..
@@ -90,7 +92,7 @@ end
 
 function mineralscanner.change_scan_range(itemstack, user_placer, pointed_thing)
 	local player_name = user_placer:get_player_name()
-	sound_range()
+	sound_range(player_name)
 	scan_range = scan_range + 1
 	if scan_range > scan_range_max then
 		scan_range = scan_range_min
