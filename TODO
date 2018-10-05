@@ -9,7 +9,3 @@ biogasmachines:
 furnacemonitor:
 	* add
 
-minertools:
-	* add Advanced Mining Assistant (upgraded PMC) with increased range
-	* AMA should require obsidian
-
