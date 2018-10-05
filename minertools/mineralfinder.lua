@@ -43,11 +43,14 @@ if minetest.get_modpath("moreores") then
 	ore_list["moreores:mineral_silver"] = "silver"
 	ore_list["moreores:mineral_mithril"] = "mithril"
 end
+local cur_stone_idx = 1
 local ore_stones = {}
 for i, _ in pairs(ore_list) do
 	ore_stones[#ore_stones + 1] = i
+	if i == "default:stone_with_coal" then
+		cur_stone_idx = #ore_stones
+	end
 end
-local cur_stone_idx = 1
 local head_vec = vector.new({x = 0, y = 1, z = 0})
 
 -- ****************
