@@ -3,3 +3,4 @@
 
 dofile(minetest.get_modpath("minertools").."/mining_chip.lua")
 dofile(minetest.get_modpath("minertools").."/geothermometer.lua")
+dofile(minetest.get_modpath("minertools").."/mineralscanner.lua")
