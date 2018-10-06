@@ -58,9 +58,9 @@ function mineralfinder.scan_for_mineral(itemstack, user, pointed_thing)
 	local player_name = user:get_player_name()
 	local head_pos = vector.add(vector.round(user:getpos()), head_vec)
 	local look_dir = user:get_look_dir()  -- normalized vec (x,y,z = -1..1)
-	local orecount, obsblock = minertools.dir_mineral_scan(head_pos,
-				   scan_range, look_dir,
-				   ore_stones[cur_stone_idx])
+	local orecount, obsblock, _ = minertools.dir_mineral_scan(head_pos,
+					scan_range, look_dir,
+					ore_stones[cur_stone_idx])
 	local oremsg = ""
 	if orecount > 0 then oremsg = msg_plus
 	else oremsg = msg_zero end

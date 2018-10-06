@@ -101,9 +101,9 @@ function pmc.use(itemstack, user, pointed_thing)
 	elseif mode == MODE_OREFIND then
 		local head_pos = vector.add(vector.round(user:getpos()), head_vec)
 		local look_dir = user:get_look_dir()
-		local orecount, obsblock = minertools.dir_mineral_scan(head_pos,
-					   find_range, look_dir,
-					   find_ore_stones[cur_stone_idx])
+		local orecount, obsblock, _ = minertools.dir_mineral_scan(
+						head_pos, find_range, look_dir,
+						find_ore_stones[cur_stone_idx])
 		local oremsg = ""
 		if orecount > 0 then oremsg = msg_plus
 		else oremsg = msg_zero end

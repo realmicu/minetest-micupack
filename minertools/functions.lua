@@ -117,13 +117,14 @@ end
 -- 		range - scan depth (float)
 -- 		look_dir - direction of looking (normalized vector)
 --		name - ore to search for (string)
--- return: mineral count, blocked by obsidian true/false
+-- return: mineral count, blocked by obsidian true/false, closest ore distance
 function minertools.dir_mineral_scan(pos, range, look_dir, name)
 	local node = {}
 	local pos_vec = {}
 	local last_vec = nil
 	local orecount = 0
 	local obsblock = false
+	local oredepth = 0
 	for i = 1, range, 1 do
 		pos_vec = vector.add(pos, vector.round(vector.multiply(look_dir, i)))
                 if not last_vec or not vector.equals(pos_vec, last_vec) then
@@ -131,6 +132,7 @@ function minertools.dir_mineral_scan(pos, range, look_dir, name)
 			if node then
 				if node.name == name then
 					orecount = orecount + 1
+					if oredepth == 0 then oredepth = i end
 				elseif minertools.has_obsidian(node.name) then
 					obsblock = true
 					break
@@ -139,7 +141,7 @@ function minertools.dir_mineral_scan(pos, range, look_dir, name)
 			last_vec = pos_vec  -- protects against double count
 		end
 	end
-	return orecount, obsblock
+	return orecount, obsblock, oredepth
 end
 
 -- scan for ores in cubic area

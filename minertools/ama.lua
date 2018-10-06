@@ -42,6 +42,9 @@ local msg_zero = minetest.get_color_escape_sequence("#00FFFF")
 local msg_plus = minetest.get_color_escape_sequence("#FF00FF")
 local msg_hot = minetest.get_color_escape_sequence("#FFC0C0")
 local msg_cold = minetest.get_color_escape_sequence("#C0C0FF")
+local msg_high = minetest.get_color_escape_sequence("#52D017")
+local msg_medium = minetest.get_color_escape_sequence("#EAC117")
+local msg_low = minetest.get_color_escape_sequence("#E56717")
 local find_ore_list = {}
 find_ore_list["default:stone_with_coal"] = "coal"
 find_ore_list["default:stone_with_iron"] = "iron"
@@ -101,13 +104,22 @@ function ama.use(itemstack, user, pointed_thing)
 	elseif mode == MODE_OREFIND then
 		local head_pos = vector.add(vector.round(user:getpos()), head_vec)
 		local look_dir = user:get_look_dir()
-		local orecount, obsblock = minertools.dir_mineral_scan(head_pos,
-					   find_range, look_dir,
-					   find_ore_stones[cur_stone_idx])
+		local orecount, obsblock, oredepth =
+			minertools.dir_mineral_scan(head_pos, find_range,
+			look_dir, find_ore_stones[cur_stone_idx])
 		local oremsg = ""
 		if orecount > 0 then oremsg = msg_plus
 		else oremsg = msg_zero end
 		oremsg = oremsg .. orecount
+		if oredepth > 0 then
+			oremsg = oremsg .. msg_white .. " (signal strength: "
+			if oredepth <= find_range / 3 then
+				oremsg = oremsg .. msg_high .. "HIGH"
+			elseif oredepth > find_range * 2 / 3 then
+				oremsg = oremsg .. msg_low .. "LOW"
+			else oremsg = oremsg .. msg_medium .. "MEDIUM" end
+			oremsg = oremsg .. msg_white .. ")"
+		end
 		if obsblock then
 			oremsg = oremsg .. msg_warn ..
 			" (warning - scan incomplete, blocked by obsidian)"
@@ -150,7 +162,7 @@ function ama.change_mode(itemstack, user_placer, pointed_thing)
 		-- mode change
 		minertools.play_click(player_name)
 		mode = ((mode + 1) % 3) + 1
-		minetest.override_item("minertools:portable_mining_computer",
+		minetest.override_item("minertools:advanced_mining_assistant",
 			{range = tool_range[mode]})
 		minetest.chat_send_player(player_name,
 			msg_yellow .. "[AMA]" .. msg_white ..
