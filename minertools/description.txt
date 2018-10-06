@@ -5,4 +5,5 @@ of solid blocks (water and lava affect block relative temperature
 mining to search - or avoid - flooded caverns or lava pools);
 mineral scanner - shows all ores in area around player, selectable
 range; mineral finder - short range directional scanner to find
-nearby deposits of selected mineral
+nearby deposits of selected mineral; 3-in-1 versions of above
+devices with improved characteristics.
