@@ -339,7 +339,7 @@ end
 function minertools.mineralfinder_switch_ore(label, player_name,
 			stones_list, stone_index)
 	play_click(player_name)
-	local new_stone_idx = (( stone_index + 1 ) % #stones_list) + 1
+	local new_stone_idx = (stone_index % #stones_list) + 1
 	minertools.print_mineral_type_set_to(label, player_name,
 		stones_list[new_stone_idx])
 	return new_stone_idx
