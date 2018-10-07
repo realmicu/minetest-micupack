@@ -85,6 +85,16 @@ function ama.change_mode(itemstack, user_placer, pointed_thing)
 	local rclick_ts = minetest.get_us_time()
 	-- detect right double-click
 	if rclick_ts - last_rclick_ts < minertools.dbl_click_us then
+		-- AMA saves last setting, so revert double-click change
+		if mode == MODE_OREFIND then
+			find_stone_idx = minertools.computer_mf_revert_ore_change(
+				"AMA:MineralFinder", player_name,
+				find_ore_stones, find_stone_idx)
+		elseif mode == MODE_ORESCAN then
+			scan_range = minertools.computer_ms_revert_range_change(
+				"AMA:MineralScanner", player_name,
+				scan_range_min, scan_range_max, scan_range)
+		end
 		-- mode change
 		mode = ((mode + 1) % #mode_name) + 1
 		minetest.override_item("minertools:advanced_mining_assistant",

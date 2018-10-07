@@ -384,3 +384,28 @@ function minertools.computer_mode_change_notify(label, player_name, mode_name)
 		mode_name .. msg_white)
 	return nil
 end
+
+-- revert last change, used by double-click routine (AMA, UMG)
+function minertools.computer_mf_revert_ore_change(label, player_name,
+			stones_list, stone_index)
+	local new_stone_idx = stone_index - 1
+	if new_stone_idx < 1 then new_stone_idx = #stones_list end
+	minetest.chat_send_player(player_name,
+		msg_yellow .. "[" .. label .. "]" .. msg_white ..
+		" Changing back to " .. msg_zero ..
+		mineral_label[stones_list[new_stone_idx]] ..
+		msg_white .. " and saving")
+	return new_stone_idx
+end
+function minertools.computer_ms_revert_range_change(label, player_name,
+			min_range, max_range, range)
+	local new_range = range + 1
+	if new_range > max_range then
+		new_range = min_range
+	end
+	minetest.chat_send_player(player_name,
+		msg_yellow .. "[" .. label .. "]" .. msg_white ..
+		" Changing back to range " .. msg_zero .. new_range ..
+		msg_white .. " and saving")
+	return new_range
+end
