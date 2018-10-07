@@ -77,6 +77,12 @@ local function play_pulse(player_name)
 		gain = 0.8,
 	})
 end
+local function play_toggle(player_name)
+	minetest.sound_play("minertools_toggle", {
+		to_player = player_name,
+		gain = 0.6,
+	})
+end
 
 -- check if node is of type that device can scan
 -- (only nodes of natural origin can be analyzed properly)
@@ -371,7 +377,7 @@ end
 
 -- play click and display new mode
 function minertools.computer_mode_change_notify(label, player_name, mode_name)
-	play_click(player_name)
+	play_toggle(player_name)
 	minetest.chat_send_player(player_name,
 		msg_yellow .. "[" .. label .. "]" .. msg_white ..
 		" Switching mode to " .. msg_yellow ..
