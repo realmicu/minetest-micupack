@@ -1,7 +1,7 @@
 
 --[[
 
-	Geothermometer device v1.0
+	Geothermometer device v2.0
 
 	Principle of calculations:
 	heat energy dissipates with square distance from source (twice the distance
@@ -27,31 +27,14 @@ local geothermometer = {}
 local tool_range = 8
 local scan_range = 10
 local temp_scale = 50.0
-local msg_white = minetest.get_color_escape_sequence("#FFFFFF")
-local msg_hot = minetest.get_color_escape_sequence("#FFC0C0")
-local msg_cold = minetest.get_color_escape_sequence("#C0C0FF")
-local msg_yellow = minetest.get_color_escape_sequence("#FFFF00")
 
 -- calculate and show relative temperature
 function geothermometer.show_rel_temp(itemstack, user, pointed_thing)
 	if pointed_thing.type ~= "node" then return nil end
 	local player_name = user:get_player_name()
 	local node_pos = vector.new(pointed_thing.under)
-	if not minertools.is_mineral(minetest.get_node(node_pos).name) then
-		minertools.play_beep_err(player_name)
-		return nil
-	end
-	local temp_var = minertools.calculate_rel_temp(node_pos, scan_range)
-	minertools.play_beep_ok(player_name)
-	local msg_val_clr = msg_white
-	if temp_var < 0 then msg_val_clr = msg_cold
-	elseif temp_var > 0 then msg_val_clr = msg_hot
-	end
-	minetest.chat_send_player(player_name,
-		msg_yellow .. "[Geothermometer]" .. msg_white ..
-		" Temperature gradient for this block is " ..
-		msg_val_clr .. string.format("%+.4f", temp_scale * temp_var) ..
-		msg_white)
+	minertools.geothermometer_use("Geothermometer", player_name,
+				      node_pos, scan_range, temp_scale)
 	return nil
 end
 

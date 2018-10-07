@@ -1,7 +1,7 @@
 
 --[[
 
-	Portable Mineral Finder v1.0
+	Portable Mineral Finder v2.0
 
 	Short range directional radar that detects
 	presence of selected ore in front of device.
@@ -26,70 +26,35 @@
 local mineralfinder = {}
 local tool_range = 4
 local scan_range = 5
-local msg_white = minetest.get_color_escape_sequence("#FFFFFF")
-local msg_yellow = minetest.get_color_escape_sequence("#FFFF00")
-local msg_warn = minetest.get_color_escape_sequence("#FF8080")
-local msg_zero = minetest.get_color_escape_sequence("#00FFFF")
-local msg_plus = minetest.get_color_escape_sequence("#FF00FF")
-local ore_list = {}
-ore_list["default:stone_with_coal"] = "coal"
-ore_list["default:stone_with_iron"] = "iron"
-ore_list["default:stone_with_copper"] = "copper"
-ore_list["default:stone_with_tin"] = "tin"
-ore_list["default:stone_with_gold"] = "gold"
-ore_list["default:stone_with_mese"] = "mese"
-ore_list["default:stone_with_diamond"] = "diamond"
-if minetest.get_modpath("moreores") then
-	ore_list["moreores:mineral_silver"] = "silver"
-	ore_list["moreores:mineral_mithril"] = "mithril"
-end
 local cur_stone_idx = 1
-local ore_stones = {}
-for i, _ in pairs(ore_list) do
-	ore_stones[#ore_stones + 1] = i
-	if i == "default:stone_with_coal" then
-		cur_stone_idx = #ore_stones
-	end
+local ore_stones = { "default:stone_with_coal",
+		     "default:stone_with_iron",
+		     "default:stone_with_copper",
+		     "default:stone_with_tin",
+		     "default:stone_with_gold",
+		     "default:stone_with_mese",
+		     "default:stone_with_diamond" }
+if minetest.get_modpath("moreores") then
+	ore_stones[#ore_stones + 1] = "moreores:mineral_silver"
+	ore_stones[#ore_stones + 1] = "moreores:mineral_mithril"
 end
-local head_vec = vector.new({x = 0, y = 1, z = 0})
 
 -- scan for selected ore in front of device
 function mineralfinder.scan_for_mineral(itemstack, user, pointed_thing)
 	local player_name = user:get_player_name()
-	local head_pos = vector.add(vector.round(user:getpos()), head_vec)
+	local head_pos = vector.add(vector.round(user:getpos()),
+			 minertools.head_vec)
 	local look_dir = user:get_look_dir()  -- normalized vec (x,y,z = -1..1)
-	local orecount, obsblock, _ = minertools.dir_mineral_scan(head_pos,
-					scan_range, look_dir,
-					ore_stones[cur_stone_idx])
-	local oremsg = ""
-	if orecount > 0 then oremsg = msg_plus
-	else oremsg = msg_zero end
-	oremsg = oremsg .. orecount
-	if obsblock then
-		oremsg = oremsg .. msg_warn ..
-			 " (warning - scan incomplete, blocked by obsidian)"
-	end
-	minertools.play_pulse(player_name)
-	minetest.chat_send_player(player_name,
-		msg_yellow .. "[MineralFinder]" .. msg_white ..
-		" Scan result for " .. msg_zero ..
-		ore_list[ore_stones[cur_stone_idx]] ..
-		msg_white .. " : " ..
-		oremsg .. msg_white)
+	minertools.mineralfinder_use("MineralFinder", player_name, head_pos,
+				     look_dir, scan_range,
+				     ore_stones[cur_stone_idx])
 	return nil
 end
 
 function mineralfinder.change_mineral_type(itemstack, user_placer, pointed_thing)
 	local player_name = user_placer:get_player_name()
-	minertools.play_click(player_name)
-	cur_stone_idx = cur_stone_idx + 1
-	if cur_stone_idx > #ore_stones then
-		cur_stone_idx = 1
-	end
-	minetest.chat_send_player(player_name,
-		msg_yellow .. "[MineralFinder]" .. msg_white ..
-		" Mineral type set to " .. msg_zero ..
-		ore_list[ore_stones[cur_stone_idx]] ..  msg_white)
+	cur_stone_idx = minertools.mineralfinder_switch_ore("MineralFinder",
+				player_name, ore_stones, cur_stone_idx)
 	return nil
 end
 

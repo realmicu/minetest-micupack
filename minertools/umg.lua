@@ -1,7 +1,7 @@
 
 --[[
 
-	Ultimate Mining Gizmo aka UMG v1.0
+	Ultimate Mining Gizmo aka UMG v2.0
 
 	This amazing device is an enhanced version of AMA.
 	Ranges and sensivity are increased again, now thanks
@@ -9,6 +9,14 @@
 	glass, all managed by (you guess it) dedicated Mining
 	Chip.
 	Operational actions remain identical to PMC and AMA.
+
+	Technical differences to AMA:
+	* increased tool range
+	* increased MineralFinder range
+	* increased MineralScanner range
+	* increased Geothermometer sensivity range
+	* increased Geothermometer display precision
+	* MS signal strength (in percent) indicates distance to ore
 
 	Left click - scan and show results
 	Right click - change scan range/searched ore
@@ -33,51 +41,23 @@ local scan_range_min = 1
 local scan_range_max = 16
 local scan_range = scan_range_max
 local find_range = 12
+local find_stone_idx = 1
 local temp_range = 16
 local temp_scale = 50.0
-local head_vec = vector.new({x = 0, y = 1, z = 0})
-local msg_white = minetest.get_color_escape_sequence("#FFFFFF")
-local msg_yellow = minetest.get_color_escape_sequence("#FFFF00")
-local msg_warn = minetest.get_color_escape_sequence("#FF8080")
-local msg_zero = minetest.get_color_escape_sequence("#00FFFF")
-local msg_plus = minetest.get_color_escape_sequence("#FF00FF")
-local msg_hot = minetest.get_color_escape_sequence("#FFC0C0")
-local msg_cold = minetest.get_color_escape_sequence("#C0C0FF")
-local msg_high = minetest.get_color_escape_sequence("#52D017")
-local msg_medium = minetest.get_color_escape_sequence("#EAC117")
-local msg_low = minetest.get_color_escape_sequence("#E56717")
-local find_ore_list = {}
-find_ore_list["default:stone_with_coal"] = "coal"
-find_ore_list["default:stone_with_iron"] = "iron"
-find_ore_list["default:stone_with_copper"] = "copper"
-find_ore_list["default:stone_with_tin"] = "tin"
-find_ore_list["default:stone_with_gold"] = "gold"
-find_ore_list["default:stone_with_mese"] = "mese"
-find_ore_list["default:stone_with_diamond"] = "diamond"
+local last_rclick_ts = 0
+local find_ore_stones = { "default:stone_with_coal",
+			  "default:stone_with_iron",
+			  "default:stone_with_copper",
+			  "default:stone_with_tin",
+			  "default:stone_with_gold",
+			  "default:stone_with_mese",
+			  "default:stone_with_diamond" }
 if minetest.get_modpath("moreores") then
-	find_ore_list["moreores:mineral_silver"] = "silver"
-	find_ore_list["moreores:mineral_mithril"] = "mithril"
+	find_ore_stones[#find_ore_stones + 1] = "moreores:mineral_silver"
+	find_ore_stones[#find_ore_stones + 1] = "moreores:mineral_mithril"
 end
-local def_stone_idx = 1
-local find_ore_stones = {}
-for i, _ in pairs(find_ore_list) do
-	find_ore_stones[#find_ore_stones + 1] = i
-        if i == "default:stone_with_coal" then
-                def_stone_idx = #find_ore_stones
-        end
-end
-local cur_stone_idx = def_stone_idx
-local scan_ore_list = {}
-for i, n in pairs(find_ore_list) do
-	scan_ore_list[i] = n
-end
-scan_ore_list["default:obsidian"] = "obsidian"
-local scan_ore_stones = {}
-for i, _ in pairs(scan_ore_list) do
-	scan_ore_stones[#scan_ore_stones + 1] = i
-end
-local dbl_click_ms = 400
-local last_rclick_ts = minetest.get_us_time()
+local scan_ore_stones = table.copy(find_ore_stones)
+scan_ore_stones[#scan_ore_stones + 1] = "default:obsidian"
 
 -- activate device function
 function umg.use(itemstack, user, pointed_thing)
@@ -86,71 +66,19 @@ function umg.use(itemstack, user, pointed_thing)
 	local node_pos = vector.new(pointed_thing.under)
 	if mode == MODE_GEOTHERM then
 		if pointed_thing.type ~= "node" then return nil end
-		if not minertools.is_mineral(minetest.get_node(node_pos).name) then
-			minertools.play_beep_err(player_name)
-			return nil
-		end
-		local temp_var = minertools.calculate_rel_temp(node_pos, temp_range)
-		minertools.play_beep_ok(player_name)
-		local msg_val_clr = msg_white
-		if temp_var < 0 then msg_val_clr = msg_cold
-		elseif temp_var > 0 then msg_val_clr = msg_hot end
-		minetest.chat_send_player(player_name,
-			msg_yellow .. "[UMG:Geothermometer]" ..
-			msg_white ..
-			" Temperature gradient for this block is " ..
-			msg_val_clr ..
-			string.format("%+.6f", temp_scale * temp_var) ..
-			msg_white)
+		minertools.geothermometer_use("UMG:Geothermometer", player_name,
+					      node_pos, temp_range, temp_scale,
+					      "%+.6f")
 	elseif mode == MODE_OREFIND then
-		local head_pos = vector.add(vector.round(user:getpos()), head_vec)
+		local head_pos = vector.add(player_pos, minertools.head_vec)
 		local look_dir = user:get_look_dir()
-		local orecount, obsblock, oredepth =
-			minertools.dir_mineral_scan(head_pos, find_range,
-			look_dir, find_ore_stones[cur_stone_idx])
-		local oremsg = ""
-		if orecount > 0 then oremsg = msg_plus
-		else oremsg = msg_zero end
-		oremsg = oremsg .. orecount
-		if oredepth > 0 then
-			oremsg = oremsg .. msg_white .. " (signal strength: "
-			local sigpct = 100.0 * (find_range - oredepth + 1) / find_range
-			if sigpct >= 75 then oremsg = oremsg .. msg_high
-			elseif sigpct < 25 then oremsg = oremsg .. msg_low
-			else oremsg = oremsg .. msg_medium end
-			oremsg = oremsg .. string.format("%d%%", sigpct) ..
-				msg_white .. ")"
-		end
-		if obsblock then
-			oremsg = oremsg .. msg_warn ..
-			" (warning - scan incomplete, blocked by obsidian)"
-		end
-		minertools.play_pulse(player_name)
-		minetest.chat_send_player(player_name,
-			msg_yellow .. "[UMG:MineralFinder]" .. msg_white ..
-			" Scan result for " .. msg_zero ..
-			find_ore_list[find_ore_stones[cur_stone_idx]] ..
-			msg_white .. " : " ..
-			oremsg .. msg_white)
+		minertools.mineralfinder_use("UMG:MineralFinder", player_name,
+				head_pos, look_dir, find_range,
+				find_ore_stones[find_stone_idx], 2)
 	elseif mode == MODE_ORESCAN then
-		local minerals = minertools.area_mineral_scan(player_pos,
-				 scan_range, scan_ore_stones)
-		local oremsg = ""
-		for orenode, orecount in pairs(minerals) do
-			local oms = scan_ore_list[orenode] .. " = " .. orecount
-			if orecount == 0 then oms = msg_zero .. oms
-			else oms = msg_plus .. oms end
-			if oremsg ~= "" then
-				oremsg = oremsg .. msg_white .. ", " .. oms
-			else
-				oremsg = oms
-			end
-		end
-		minertools.play_scan(player_name)
-		minetest.chat_send_player(player_name,
-			msg_yellow .. "[UMG:MineralScanner]" .. msg_white ..
-			" Scan results for cubic range " .. scan_range ..
-			" : " .. oremsg .. msg_white)
+		minertools.mineralscanner_use("UMG:MineralScanner", player_name,
+					      player_pos, scan_range,
+					      scan_ore_stones)
 	end
 	return nil
 end
@@ -159,53 +87,32 @@ function umg.change_mode(itemstack, user_placer, pointed_thing)
 	local player_name = user_placer:get_player_name()
 	local rclick_ts = minetest.get_us_time()
 	-- detect right double-click
-	if rclick_ts - last_rclick_ts < dbl_click_ms * 1000 then
+	if rclick_ts - last_rclick_ts < minertools.dbl_click_us then
 		-- mode change
-		minertools.play_click(player_name)
-		mode = ((mode + 1) % 3) + 1
+		mode = ((mode + 1) % #mode_name) + 1
 		minetest.override_item("minertools:ultimate_mining_gizmo",
 			{range = tool_range[mode]})
-		minetest.chat_send_player(player_name,
-			msg_yellow .. "[UMG]" .. msg_white ..
-			" Switching mode to " .. msg_yellow ..
-			mode_name[mode] .. msg_white)
+		minertools.computer_mode_change_notify("UMG", player_name,
+			mode_name[mode])
 		if mode == MODE_OREFIND then
-			cur_stone_idx = def_stone_idx
-			minetest.chat_send_player(player_name,
-				msg_yellow .. "[UMG:MineralFinder]" .. msg_white ..
-				" Mineral type is now " .. msg_zero ..
-				find_ore_list[find_ore_stones[cur_stone_idx]] ..
-				msg_white)
+			-- UMG remembers settings, do not reset ore
+			minertools.print_mineral_type_is_now("UMG:MineralFinder",
+				player_name, find_ore_stones[find_stone_idx])
 		elseif mode == MODE_ORESCAN then
-			scan_range = scan_range_max
-			minetest.chat_send_player(player_name,
-				msg_yellow .. "[UMG:MineralScanner]" ..
-				msg_white .. " Scan range is now "
-				.. msg_zero .. scan_range .. msg_white)
+			-- UMG remembers settings, do not reset range
+			minertools.print_scan_range_is_now("UMG:MineralScanner",
+				player_name, scan_range)
 		end
 	else
 		-- option change
 		if mode == MODE_OREFIND then
-			cur_stone_idx = cur_stone_idx + 1
-			if cur_stone_idx > #find_ore_stones then
-				cur_stone_idx = 1
-			end
-			minertools.play_click(player_name)
-			minetest.chat_send_player(player_name,
-			msg_yellow .. "[UMG:MineralFinder]" .. msg_white ..
-			" Mineral type set to " .. msg_zero ..
-			find_ore_list[find_ore_stones[cur_stone_idx]] ..
-			msg_white)
+			find_stone_idx = minertools.mineralfinder_switch_ore(
+				"UMG:MineralFinder", player_name,
+				find_ore_stones, find_stone_idx)
 		elseif mode == MODE_ORESCAN then
-			scan_range = scan_range - 1
-			if scan_range == 0 then
-				scan_range = scan_range_max
-			end
-			minertools.play_click(player_name)
-			minetest.chat_send_player(player_name,
-			msg_yellow .. "[UMG:MineralScanner]" .. msg_white ..
-			" Scan range set to " .. msg_zero .. scan_range ..
-			msg_white)
+			scan_range = minertools.mineralscanner_switch_range(
+				"AMA:MineralScanner", player_name,
+				scan_range_min, scan_range_max, scan_range)
 		end
 	end
 	last_rclick_ts = rclick_ts
