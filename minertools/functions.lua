@@ -269,15 +269,15 @@ function minertools.mineralfinder_use(label, player_name, head_pos, look_dir,
 	if oredepth > 0 then
 		if rangeshow == 1 then
 			oremsg = oremsg .. msg_white .. " (signal strength: "
-			if oredepth <= find_range / 3 then
+			if oredepth <= range / 3 then
 				oremsg = oremsg .. msg_high .. "HIGH"
-			elseif oredepth > find_range * 2 / 3 then
+			elseif oredepth > range * 2 / 3 then
 				oremsg = oremsg .. msg_low .. "LOW"
 			else oremsg = oremsg .. msg_medium .. "MEDIUM" end
 			oremsg = oremsg .. msg_white .. ")"
 		elseif rangeshow == 2 then
 			oremsg = oremsg .. msg_white .. " (signal strength: "
-			local sigpct = 100.0 * (find_range - oredepth + 1) / find_range
+			local sigpct = 100.0 * (range - oredepth + 1) / range
 			if sigpct >= 75 then oremsg = oremsg .. msg_high
 			elseif sigpct < 25 then oremsg = oremsg .. msg_low
 			else oremsg = oremsg .. msg_medium end
