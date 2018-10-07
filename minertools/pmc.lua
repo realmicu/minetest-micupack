@@ -82,7 +82,7 @@ function pmc.change_mode(itemstack, user_placer, pointed_thing)
 	-- detect right double-click
 	if rclick_ts - last_rclick_ts < minertools.dbl_click_us then
 		-- mode change
-		mode = ((mode + 1) % #mode_name) + 1
+		mode = (mode % #mode_name) + 1
 		minetest.override_item("minertools:portable_mining_computer",
 			{range = tool_range[mode]})
 		minertools.computer_mode_change_notify("PMC", player_name,
