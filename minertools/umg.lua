@@ -121,7 +121,7 @@ function umg.change_mode(itemstack, user_placer, pointed_thing)
 				find_ore_stones, find_stone_idx)
 		elseif mode == MODE_ORESCAN then
 			scan_range = minertools.mineralscanner_switch_range(
-				"AMA:MineralScanner", player_name,
+				"UMG:MineralScanner", player_name,
 				scan_range_min, scan_range_max, scan_range)
 		end
 	end
