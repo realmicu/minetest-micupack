@@ -32,11 +32,16 @@ local umg = {}
 local MODE_GEOTHERM = 1
 local MODE_OREFIND = 2
 local MODE_ORESCAN = 3
+local MODE_LIGHT = 4
 local mode = MODE_GEOTHERM
 local mode_name = { [MODE_GEOTHERM] = "Geothermometer",
 		    [MODE_OREFIND] = "Mineral Finder",
 		    [MODE_ORESCAN] = "Mineral Scanner", }
-local tool_range = { [MODE_GEOTHERM] = 12, [MODE_OREFIND] = 8, [MODE_ORESCAN] = 0 }
+if minetest.get_modpath("wielded_light") then
+	mode_name[MODE_LIGHT] = "Flashlight"
+end
+local tool_range = { [MODE_GEOTHERM] = 12, [MODE_OREFIND] = 8,
+		     [MODE_ORESCAN] = 0, [MODE_LIGHT] = 4 }
 local scan_range_min = 1
 local scan_range_max = 16
 local scan_range = scan_range_max
@@ -44,6 +49,7 @@ local find_range = 12
 local find_stone_idx = 1
 local temp_range = 16
 local temp_scale = 50.0
+local light_on = false
 local last_rclick_ts = 0
 local find_ore_stones = { "default:stone_with_coal",
 			  "default:stone_with_iron",
@@ -97,6 +103,13 @@ function umg.change_mode(itemstack, user_placer, pointed_thing)
 			scan_range = minertools.computer_ms_revert_range_change(
 				"UMG:MineralScanner", player_name,
 				scan_range_min, scan_range_max, scan_range)
+		elseif mode == MODE_LIGHT then
+			light_on = minertools.computer_fl_revert_switch(
+				"UMG:Flashlight", player_name, light_on)
+			local lightlvl = 0
+			if light_on then lightlvl = default.LIGHT_MAX end
+			minetest.override_item("minertools:ultimate_mining_gizmo",
+				{ light_source = lightlvl })
 		end
 		-- mode change
 		mode = (mode % #mode_name) + 1
@@ -123,6 +136,13 @@ function umg.change_mode(itemstack, user_placer, pointed_thing)
 			scan_range = minertools.mineralscanner_switch_range(
 				"UMG:MineralScanner", player_name,
 				scan_range_min, scan_range_max, scan_range)
+		elseif mode == MODE_LIGHT then
+			light_on = minertools.flashlight_switch(
+				"UMG:Flashlight", player_name, light_on)
+			local lightlvl = 0
+			if light_on then lightlvl = default.LIGHT_MAX end
+			minetest.override_item("minertools:ultimate_mining_gizmo",
+				{ light_source = lightlvl })
 		end
 	end
 	last_rclick_ts = rclick_ts
