@@ -411,25 +411,20 @@ function minertools.computer_ms_revert_range_change(label, player_name,
 end
 
 -- flashlight, should be used with wielded_light mod for effect
-function minertools.flashlight_switch(label, player_name, light_flag)
+function minertools.flashlight_use(label, player_name,
+		item_name, light_flag)
 	play_click(player_name)
 	local new_light_on = not light_flag
-	local ltsw = "OFF"
-	if new_light_on then ltsw = "ON" end
+	local lightsw = "OFF"
+	local lightlvl = 0
+	if new_light_on then
+		lightsw = "ON"
+		lightlvl = default.LIGHT_MAX
+	end
+	minetest.override_item(item_name, { light_source = lightlvl })
 	minetest.chat_send_player(player_name,
 		msg_yellow .. "[" .. label .. "]" .. msg_white ..
 		" Switching flashlight to " .. msg_zero ..
-		ltsw .. msg_white)
-	return new_light_on
-end
-function minertools.computer_fl_revert_switch(label, player_name,
-			light_flag)
-	local new_light_on = not light_flag
-	local ltsw = "OFF"
-	if new_light_on then ltsw = "ON" end
-	minetest.chat_send_player(player_name,
-		msg_yellow .. "[" .. label .. "]" .. msg_white ..
-		" Changing back flashlight to " .. msg_zero .. ltsw ..
-		msg_white .. " and saving")
+		lightsw .. msg_white)
 	return new_light_on
 end

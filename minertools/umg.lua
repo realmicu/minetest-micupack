@@ -85,6 +85,10 @@ function umg.use(itemstack, user, pointed_thing)
 		minertools.mineralscanner_use("UMG:MineralScanner", player_name,
 					      player_pos, scan_range,
 					      scan_ore_stones)
+	elseif mode == MODE_LIGHT then
+		light_on = minertools.flashlight_use("UMG:Flashlight",
+			player_name, "minertools:ultimate_mining_gizmo",
+			light_on)
 	end
 	return nil
 end
@@ -103,13 +107,6 @@ function umg.change_mode(itemstack, user_placer, pointed_thing)
 			scan_range = minertools.computer_ms_revert_range_change(
 				"UMG:MineralScanner", player_name,
 				scan_range_min, scan_range_max, scan_range)
-		elseif mode == MODE_LIGHT then
-			light_on = minertools.computer_fl_revert_switch(
-				"UMG:Flashlight", player_name, light_on)
-			local lightlvl = 0
-			if light_on then lightlvl = default.LIGHT_MAX end
-			minetest.override_item("minertools:ultimate_mining_gizmo",
-				{ light_source = lightlvl })
 		end
 		-- mode change
 		mode = (mode % #mode_name) + 1
@@ -136,13 +133,6 @@ function umg.change_mode(itemstack, user_placer, pointed_thing)
 			scan_range = minertools.mineralscanner_switch_range(
 				"UMG:MineralScanner", player_name,
 				scan_range_min, scan_range_max, scan_range)
-		elseif mode == MODE_LIGHT then
-			light_on = minertools.flashlight_switch(
-				"UMG:Flashlight", player_name, light_on)
-			local lightlvl = 0
-			if light_on then lightlvl = default.LIGHT_MAX end
-			minetest.override_item("minertools:ultimate_mining_gizmo",
-				{ light_source = lightlvl })
 		end
 	end
 	last_rclick_ts = rclick_ts
