@@ -17,6 +17,7 @@
 	* increased Geothermometer sensivity range
 	* increased Geothermometer display precision
 	* MS signal strength (in percent) indicates distance to ore
+	* Flashlight (only makes sense if wielded_light mod is enabled)
 
 	Left click - scan and show results
 	Right click - change scan range/searched ore
