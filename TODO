@@ -1,6 +1,3 @@
-minertools:
-	* define doubleclick in settings in ms
-
 moderntables:
 	* add half-height table
 	* add table with storage (2x8)

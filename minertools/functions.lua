@@ -40,7 +40,8 @@ end
 
 -- public constants
 minertools.head_vec = vector.new({x = 0, y = 1, z = 0})
-minertools.dbl_click_us = 300 * 1000
+minertools.dbl_click_us = 1000 * (tonumber(minetest.settings:get(
+			  "minertools_double_click_ms")) or 300)
 
 -- ****************
 -- Helper functions
