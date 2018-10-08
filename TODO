@@ -1,3 +1,5 @@
+minertools:
+	* define doubleclick in settings in ms
 
 moderntables:
 	* add half-height table
@@ -8,4 +10,9 @@ biogasmachines:
 
 furnacemonitor:
 	* add
+
+obsidianmaker:
+	* general idea: heat up cobblestone using Biogas and with help of water
+	  input (pipes?) convert to obsidian block;
+	  should require a lot of energy
 
