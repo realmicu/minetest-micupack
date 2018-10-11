@@ -1,2 +1,0 @@
-#Right double-click time in milliseconds
-minertools_double_click_ms (Double-click time in milliseconds) float 300
