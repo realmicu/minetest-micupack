@@ -1,0 +1,3 @@
+# Make Ultimate Mining Gizmo a light source, works only if wielded_light
+# or similar mod is active, otherwise does nothing (and doesn't hurt either)
+minertools_flashlight_on (UMG has flashlight - requires mod like wielded_light) bool false

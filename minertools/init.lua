@@ -17,6 +17,13 @@ minertools = {}
 	---------
 ]]--
 
+-- parameters
+if minetest.settings:get_bool("minertools_flashlight_on") then
+	light_level = minetest.LIGHT_MAX
+else
+	light_level = 0
+end
+
 -- recognized ores
 local find_ore_list = { "default:stone_with_coal",
 			"default:stone_with_iron",
@@ -841,6 +848,7 @@ minetest.register_tool("minertools:ultimate_mining_gizmo", {
 	wield_image = "minertools_umg_hand.png",
 	wield_scale = { x = 1, y = 1, z = 1 },
 	inventory_image = "minertools_umg_inv.png",
+	light_source = light_level,
 	stack_max = 1,
 	range = 12,			-- AMA + 2
 	_init_metadata = multidevice_init_metadata,
