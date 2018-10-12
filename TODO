@@ -1,3 +1,13 @@
+smartlcassistant:
+	* add an USB-dongle-like device similar to programmer
+	* device works only with Smartline Lua Controller
+	* it gets init(), loop() and notes text (metadata) and
+	  saves them in memory
+	* additionally it works like programmer - collect IDs of devices
+	  and produces simple lua code 'var = "id"'
+	* reset at using at nothing/non-lua
+	* transfers code to device metadata when left-clicking
+
 moderntables:
 	* add half-height table
 	* add table with storage (2x8)
