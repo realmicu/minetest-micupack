@@ -1,0 +1,4 @@
+Preserving code of Smartline Lua Controller requires book and text copying.
+With this device, it is a lot simplier: Smartline SaferLua Controller Memory
+Copier (aka SLCMC) automatically stores init, loop and notes section of one
+device and transfers it to another controller.
