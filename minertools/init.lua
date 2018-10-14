@@ -327,7 +327,6 @@ local function multidevice_formspec(tool)
 		if i < #ore_list then ore_opts = ore_opts .. "," end
 		if n == ore_type then ore_idx = i end
 	end
-	-- TODO: adjust below
 	return "size[4.25,4,true]"..
 	"position[0.5,0.25]" ..
 	"no_prepend[]" ..
@@ -501,7 +500,7 @@ local function mineralscanner_use(item, player, pointed_thing)
 		msg_yellow .. "[" .. label .. "]" .. msg_white ..
 		" Scan results for cubic range " .. range ..
 		" : " .. oremsg .. msg_white)
-        return nil
+        return item
 end
 
 -- mineral finder (MF)
@@ -576,7 +575,7 @@ local function mineralfinder_use(item, player, pointed_thing)
 		" Scan result for " .. msg_zero ..
 		ore_label[ore_name] ..  msg_white ..
 		" : " .. oremsg .. msg_white)
-        return nil
+        return item
 end
 
 -- multidevices (PMC, AMA, UMG)
@@ -596,7 +595,7 @@ local function multidevice_use(item, player, pointed_thing)
 	elseif mode == MODE_OREFIND then
 		mineralfinder_use(item, player, pointed_thing)
 	end
-	return nil
+	return item
 end
 
 --[[
