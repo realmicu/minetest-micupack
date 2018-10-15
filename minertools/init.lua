@@ -197,7 +197,10 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 	local tool_meta = tool:get_meta()
 	local tool_upd = false
 	local play_snd = true
-	if fields and fields.ok then play_snd = false end
+	if fields and fields.ok then
+		play_click(player_name)
+		play_snd = false
+	end
 	if formname == "minertools:mineral_scanner" then
 		if fields and fields.range then
 			tool_meta:set_int("scan_range", tonumber(fields.range))
@@ -236,10 +239,6 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 		end
 	end
 	if tool_upd then player:set_wielded_item(tool) end
-	if fields and fields.ok then
-		play_click(player_name)
-		minetest.close_formspec(player_name, formname)
-	end
 	return true
 end)
 
@@ -270,7 +269,7 @@ local function mineralscanner_formspec(tool)
 	"label[0,0.75;Scan range]" ..
 	"dropdown[1.75,0.625;1;range;" .. range_opts .. ";" ..
 	(range - range_min + 1) .. "]" ..
-	"button[0.75,1.75;1.5,0.5;ok;OK]"
+	"button_exit[0.75,1.75;1.5,0.5;ok;OK]"
 end
 
 local function mineralfinder_formspec(tool)
@@ -295,7 +294,7 @@ local function mineralfinder_formspec(tool)
 	"label[0.25,0.75;Ore]" ..
 	"dropdown[1.25,0.625;1.5;ore;" .. ore_opts .. ";" ..
 	ore_idx .. "]" ..
-	"button[0.75,1.75;1.5,0.5;ok;OK]"
+	"button_exit[0.75,1.75;1.5,0.5;ok;OK]"
 end
 
 local function multidevice_formspec(tool)
@@ -340,7 +339,7 @@ local function multidevice_formspec(tool)
 	"label[0.5,2.75;Ore]" ..
 	"dropdown[2,2.625;1.5;ore;" .. ore_opts .. ";" ..
 	ore_idx .. "]" ..
-	"button[1.25,3.75;1.5,0.5;ok;OK]"
+	"button_exit[1.25,3.75;1.5,0.5;ok;OK]"
 end
 
 --[[
