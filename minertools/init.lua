@@ -197,7 +197,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 	local tool_meta = tool:get_meta()
 	local tool_upd = false
 	local play_snd = true
-	if fields and fields.ok then
+	if fields and (fields.ok or fields.quit) then
 		play_click(player_name)
 		play_snd = false
 	end
