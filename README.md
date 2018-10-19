@@ -33,6 +33,7 @@ This modpack contains:
 
 
 * Biogas Machines
+
   Work in progress, only a stub for now. Planned to expand TechPack with biogas-fuelled
   furnace, machine to extract biogas from coal blocks and a high temperature compressor
   to convert (albeit slowly) stone to obsidian.
