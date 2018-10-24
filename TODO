@@ -2,7 +2,6 @@ all tools:
 	* add doc fields
 
 minertools:
-	* multidevice formspec - be more clear which setting is for what
 	* consider adding fire node (+effect) and snow/ice (-effect)
 	* according to official wiki, mese blocks (default:mese) can
 	  occur naturally at depth < -1024 - add this to scanners

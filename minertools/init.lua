@@ -332,13 +332,14 @@ local function multidevice_formspec(tool)
 	"label[0.5,0;" .. minetest.colorize("#FFFF00", label) .. "]" ..
 	"label[0,0.75;" .. minetest.colorize("#00FFFF", "Mode") .. "]" ..
 	"dropdown[1.75,0.625;2.5;mode;" .. mode_opts .. ";" ..
-	mode .. "]" ..
-	"label[0.5,1.75;Scan range]" ..
+		mode .. "]" ..
+	"label[0.5,1.75;" .. minetest.colorize("#00FFFF", "MS:") ..
+		" Scan range]" ..
 	"dropdown[2.5,1.625;1;range;" .. range_opts .. ";" ..
-	(range - range_min + 1) .. "]" ..
-	"label[0.5,2.75;Ore]" ..
+		(range - range_min + 1) .. "]" ..
+	"label[0.5,2.75;" .. minetest.colorize("#00FFFF", "MF:") .. " Ore]" ..
 	"dropdown[2,2.625;1.5;ore;" .. ore_opts .. ";" ..
-	ore_idx .. "]" ..
+		ore_idx .. "]" ..
 	"button_exit[1.25,3.75;1.5,0.5;ok;OK]"
 end
 
