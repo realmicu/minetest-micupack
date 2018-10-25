@@ -7,10 +7,6 @@ minertools:
 	  occur naturally at depth < -1024 - add this to scanners
 	  and finders
 
-slprogtools:
-	* add better version of Copier - that can fill Lua table with
-	  collected IDs (like programmer but for SL Controller)
-
 moderntables:
 	* add half-height table
 	* add table with storage (2x8)
