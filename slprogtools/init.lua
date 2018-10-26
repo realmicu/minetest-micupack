@@ -465,14 +465,12 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 		local wo_flag = tool_meta:get_int("wo_flag") == 1
 		if (fields.clear or fields.download) and ro_flag then
 			play_beep_err(player_name)
-			minetest.close_formspec(player_name, formname)
 			minetest.chat_send_player(player_name,
 				msg_Y .. "[" .. label .. "] " .. msg_R ..
 				"Device memory is write-protected! (see security tab)")
 			return true
 		elseif fields.upload and wo_flag then
 			play_beep_err(player_name)
-			minetest.close_formspec(player_name, formname)
 			minetest.chat_send_player(player_name,
 				msg_Y .. "[" .. label .. "] " .. msg_R ..
 				"Device memory is read-protected! (see security tab)")
@@ -541,7 +539,6 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 			local init_len, loop_len, note_len = -1, -1, -1
 			if slc_meta:get_int("state") ~= tubelib.STOPPED then
 				play_beep_err(player_name)
-				minetest.close_formspec(player_name, formname)
 				minetest.chat_send_player(player_name,
 					msg_Y .. "[" .. label .. "] " .. msg_R ..
 					"Cannot upload to running system!")
@@ -590,7 +587,6 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 		elseif fields.rewrite then
 			if slc_meta:get_int("state") ~= tubelib.STOPPED then
 				play_beep_err(player_name)
-				minetest.close_formspec(player_name, formname)
 				minetest.chat_send_player(player_name,
 					msg_Y .. "[" .. label .. "] " .. msg_R ..
 					"Cannot rewrite code of running system!")
