@@ -6,6 +6,7 @@
 
 	This file contains:
 	* Memory Copier for SaferLua Controller
+	* Memory Programmer for SaferLua Controller
 
 	Notice: SaferLua Controller uses node formspec
 	so please switch to 'outp' or 'help' tab for
