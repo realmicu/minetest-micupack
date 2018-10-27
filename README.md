@@ -25,11 +25,18 @@ This modpack contains:
 
 * SaferLua Programming Tools
 
-  Devices for interacting with SaferLua Controller from TechPack mod. To be expanded.
-  For now it contains a Memory Copier - portable dongle to transfer code between SL
-  Controllers in much simpler and faster fashion than copying it with text books; please
-  note that due to formspec nature, only inactive tabs can be populated - before code
-  upload change active Controller tab to 'outp' or 'help'.
+  Devices for interacting with SaferLua Controller from TechPack mod:
+
+  - Memory Copier - portable dongle to transfer code between SL Controllers in much simpler
+    and faster fashion than copying it with text books
+  - Memory Programmer - improved Memory Copier, with read/write protection to prevent
+    accidental memory loss and code injection functionality (works like original Programmer
+    but for SL Controllers); the latter allows to replace special marker in init() section
+    code with array containing collected Tubelib numbers, making redeployments of SL
+    Controllers (for example for mobile mining with Quarries and Pushers) much easier
+
+  Note: due to formspec implementation, only inactive tabs can be populated - before code
+  upload/rewrite please change active tab on SaferLua Controller to 'outp' or 'help'.
 
 
 * Biogas Machines
