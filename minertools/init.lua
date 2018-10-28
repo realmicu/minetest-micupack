@@ -18,6 +18,7 @@ minertools = {}
 ]]--
 
 -- parameters
+local light_level
 if minetest.settings:get_bool("minertools_flashlight_on") then
 	light_level = minetest.LIGHT_MAX
 else
