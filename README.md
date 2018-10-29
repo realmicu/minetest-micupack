@@ -51,10 +51,10 @@ This modpack contains:
   monitored node. In case of wrong orientation use screwdriver.
 
   Status:
-  "fault" - monitor is not placed on a furnace
-  "stopped" - furnace is not smelting/cooking
-  "running" - furnace is smelting/cooking items
-  "standby" - furnace is burning fuel but there are no items loaded
+  - "fault" - monitor is not placed on a furnace
+  - "stopped" - furnace is not smelting/cooking
+  - "running" - furnace is smelting/cooking items
+  - "standby" - furnace is burning fuel but there are no items loaded
 
   Punch node to see current status.
 
