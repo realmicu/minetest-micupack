@@ -39,6 +39,26 @@ This modpack contains:
   upload/rewrite please change active tab on SaferLua Controller to 'outp' or 'help'.
 
 
+* Furnace Monitor
+
+  This simple device allows to monitor Minetest Game standard furnace with Tubelib/Smartline
+  devices that are capable of reading Tubelib node state (like SaferLua Controllers etc).
+  It receives 4-digit number and can be referred like any other compatible read-only node.
+  Monitor checks attached node only when status is requested so it does not consume CPU
+  resources when idle (no timers).
+
+  Placement: place on any side of a furnace, make sure back plate of device has contact with
+  monitored node. In case of wrong orientation use screwdriver.
+
+  Status:
+  "fault" - monitor is not placed on a furnace
+  "stopped" - furnace is not smelting/cooking
+  "running" - furnace is smelting/cooking items
+  "standby" - furnace is burning fuel but there are no items loaded
+
+  Punch node to see current status.
+
+
 * Biogas Machines
 
   Work in progress, only a stub for now. Planned to expand TechPack with biogas-fuelled

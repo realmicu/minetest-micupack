@@ -1,0 +1,2 @@
+Read-only device that monitors Minetest standard furnace and report its
+status in Tubelib-compatible way.

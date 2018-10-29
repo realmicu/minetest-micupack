@@ -14,9 +14,6 @@ moderntables:
 biogasmachines:
 	* Coal Gasifier, Biogas Smelter - behaviour based on Quarry and Grinder
 
-furnacemonitor:
-	* add
-
 obsidianmaker:
 	* general idea: heat up cobblestone using Biogas and with help of water
 	  input (pipes?) convert to obsidian block;
