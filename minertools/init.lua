@@ -144,6 +144,7 @@ local function is_mineral(name)
 	if minetest.get_item_group(name, "soil") > 0 then return true end
 	if minetest.get_item_group(name, "stone") > 0 then return true end
 	if string.match(name, "^default:stone_with_") then return true end
+	if string.match(name, "^default:.*sandstone") then return true end
 	if name == "default:gravel"
 		or name == "default:clay" then return true end
 	if minetest.get_modpath("moreores") then
