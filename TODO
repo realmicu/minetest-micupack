@@ -1,11 +1,7 @@
-all tools:
-	* add doc fields
 
 minertools:
+	* redefine multidevice formspecs to react to combobox selection
 	* consider adding fire node (+effect) and snow/ice (-effect)
-	* according to official wiki, mese blocks (default:mese) can
-	  occur naturally at depth < -1024 - add this to scanners
-	  and finders
 
 moderntables:
 	* add half-height table
@@ -13,9 +9,6 @@ moderntables:
 
 biogasmachines:
 	* Coal Gasifier, Biogas Smelter - behaviour based on Quarry and Grinder
-
-obsidianmaker:
-	* general idea: heat up cobblestone using Biogas and with help of water
-	  input (pipes?) convert to obsidian block;
-	  should require a lot of energy
+	* High-Temp Compressor - heat up cobblestone using Biogas and change it
+	  (slowly and with lot of energy) to obsidian
 
