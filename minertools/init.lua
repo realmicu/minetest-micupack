@@ -26,21 +26,14 @@ else
 end
 
 -- recognized ores
-local find_ore_list = { "default:stone_with_coal",
-			"default:stone_with_iron",
-			"default:stone_with_copper",
-			"default:stone_with_tin",
-			"default:stone_with_gold",
-			"default:stone_with_mese",
-			"default:stone_with_diamond" }
+local find_ore_list = { "coal", "iron", "copper", "tin", "gold",
+			"mese", "diamond" }
 if minetest.get_modpath("moreores") then
-	find_ore_list[#find_ore_list + 1] =
-		"moreores:mineral_silver"
-	find_ore_list[#find_ore_list + 1] =
-		"moreores:mineral_mithril"
+	find_ore_list[#find_ore_list + 1] = "silver"
+	find_ore_list[#find_ore_list + 1] = "mithril"
 end
 local scan_ore_list = table.copy(find_ore_list)
-scan_ore_list[#scan_ore_list + 1] = "default:obsidian"
+scan_ore_list[#scan_ore_list + 1] = "obsidian"
 
 -- colors
 local msg_white = minetest.get_color_escape_sequence("#FFFFFF")
@@ -54,19 +47,21 @@ local msg_high = minetest.get_color_escape_sequence("#52D017")
 local msg_medium = minetest.get_color_escape_sequence("#EAC117")
 local msg_low = minetest.get_color_escape_sequence("#E56717")
 
--- mineral labels (for display)
-local ore_label = {}
-ore_label["default:stone_with_coal"] = "coal"
-ore_label["default:stone_with_iron"] = "iron"
-ore_label["default:stone_with_copper"] = "copper"
-ore_label["default:stone_with_tin"] = "tin"
-ore_label["default:stone_with_gold"] = "gold"
-ore_label["default:stone_with_mese"] = "mese"
-ore_label["default:stone_with_diamond"] = "diamond"
-ore_label["default:obsidian"] = "obsidian"
+-- mineral names
+local ore_name = { ["coal"] = { "default:stone_with_coal",
+				"default:coalblock" },
+		   ["iron"] = { "default:stone_with_iron" },
+		   ["copper"] = { "default:stone_with_copper" },
+		   ["tin"] = { "default:stone_with_tin" },
+		   ["gold"] = { "default:stone_with_gold" },
+		   ["mese"] = { "default:stone_with_mese",
+				"default:mese"},
+		   ["diamond"] = { "default:stone_with_diamond",
+				   "default:diamondblock" },
+		   ["obsidian"] = { "default:obsidian" } }
 if minetest.get_modpath("moreores") then
-	ore_label["moreores:mineral_silver"] = "silver"
-	ore_label["moreores:mineral_mithril"] = "mithril"
+	ore_name["silver"] = { "moreores:mineral_silver" }
+	ore_name["mithril"] = { "moreores:mineral_mithril" }
 end
 
 -- multidevice
@@ -78,9 +73,11 @@ local mode_name = { [MODE_GEOTHERM] = "Geothermometer",
 		    [MODE_OREFIND] = "Mineral Finder" }
 
 -- fast lookup tables
-local rev_ore_label = {}
-for n, l in pairs(ore_label) do
-	rev_ore_label[l] = n
+local rev_ore_name = {}
+for n, a in pairs(ore_name) do
+	for _, m in ipairs(a) do
+		rev_ore_name[m] = n
+	end
 end
 local rev_mode_name = {}
 for i, m in pairs(mode_name) do
@@ -211,8 +208,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 		end
 	elseif formname == "minertools:mineral_finder" then
 		if fields and fields.ore then
-			tool_meta:set_string("ore_type",
-				rev_ore_label[fields.ore])
+			tool_meta:set_string("ore_type", fields.ore)
 			if play_snd then play_click(player_name) end
 			tool_upd = true
 		end
@@ -233,8 +229,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 				tool_upd = true
 			end
 			if fields.ore then
-				tool_meta:set_string("ore_type",
-					rev_ore_label[fields.ore])
+				tool_meta:set_string("ore_type", fields.ore)
 				if play_snd then play_click(player_name) end
 				tool_upd = true
 			end
@@ -284,7 +279,7 @@ local function mineralfinder_formspec(tool)
 	local ore_opts = ""
 	local ore_idx = 0
 	for i, n in ipairs(ore_list) do
-		ore_opts = ore_opts .. ore_label[n]
+		ore_opts = ore_opts .. n
 		if i < #ore_list then ore_opts = ore_opts .. "," end
 		if n == ore_type then ore_idx = i end
 	end
@@ -324,7 +319,7 @@ local function multidevice_formspec(tool)
 	local ore_opts = ""
 	local ore_idx = 0
 	for i, n in ipairs(ore_list) do
-		ore_opts = ore_opts .. ore_label[n]
+		ore_opts = ore_opts .. n
 		if i < #ore_list then ore_opts = ore_opts .. "," end
 		if n == ore_type then ore_idx = i end
 	end
@@ -373,7 +368,7 @@ local function mineralfinder_init_metadata(player, tool)
 	local tool_meta = tool:get_meta()
 	local ore_type = tool_meta:get_string("ore_type")
 	if not is_member_of(ore_type, ore_list) then
-		tool_meta:set_string("ore_type", "default:stone_with_coal")
+		tool_meta:set_string("ore_type", "coal")
 		player:set_wielded_item(tool)  -- update item
 		return true
 	end
@@ -403,7 +398,7 @@ local function multidevice_init_metadata(player, tool)
 	local ore_list = tool_def._find_ore_list
 	local ore_type = tool_meta:get_string("ore_type")
 	if not is_member_of(ore_type, ore_list) then
-		tool_meta:set_string("ore_type", "default:stone_with_coal")
+		tool_meta:set_string("ore_type", "coal")
 		tool_upd = true
 	end
 	-- all done
@@ -479,20 +474,30 @@ local function mineralscanner_use(item, player, pointed_thing)
 	local range_min = tool_def._scan_range_min
 	local range_max = tool_def._scan_range_max
 	local ore_list = tool_def._scan_ore_list
+	local ore_nodes = {}
+	for _, n in ipairs(ore_list) do
+		for _, o in pairs(ore_name[n]) do
+			ore_nodes[#ore_nodes + 1] = o
+		end
+	end
 	local item_meta = item:get_meta()
 	local range = item_meta:get_int("scan_range")
         local scan_vec = vector.new({x = range, y = range, z = range})
         local scan_pos1 = vector.subtract(player_pos, scan_vec)
         local scan_pos2 = vector.add(player_pos, scan_vec)
         local _, minerals = minetest.find_nodes_in_area(scan_pos1,
-		scan_pos2, ore_list)
+		scan_pos2, ore_nodes)
 	local oremsg = ""
+	local orecount = 0
 	-- we do like our ore order
 	for i, n in ipairs(ore_list) do
-		local orecount = minerals[n]
+		orecount = 0
+		for _, o in ipairs(ore_name[n]) do
+			orecount = orecount + minerals[o]
+		end
 		if orecount == 0 then oremsg = oremsg .. msg_zero
 		else oremsg = oremsg .. msg_plus end
-		oremsg = oremsg .. ore_label[n] .. " = " .. orecount
+		oremsg = oremsg .. n .. " = " .. orecount
 		if i < #ore_list then
 			oremsg = oremsg .. msg_white .. ", "
 		end
@@ -519,7 +524,7 @@ local function mineralfinder_use(item, player, pointed_thing)
 	local depth = tool_def._find_depth
 	local det_lvl = tool_def._find_detail
 	local item_meta = item:get_meta()
-	local ore_name = item_meta:get_string("ore_type")
+	local ore_type = item_meta:get_string("ore_type")
 	local head_pos = vector.add(player_pos, { x = 0, y = 1, z = 0 })
 	local node = {}
 	local pos_vec = {}
@@ -533,7 +538,7 @@ local function mineralfinder_use(item, player, pointed_thing)
                 if not last_vec or not vector.equals(pos_vec, last_vec) then
 			node = minetest.get_node_or_nil(pos_vec)
 			if node then
-				if node.name == ore_name then
+				if rev_ore_name[node.name] == ore_type then
 					orecount = orecount + 1
 					if oredepth == 0 then oredepth = i end
 				elseif has_obsidian(node.name) then
@@ -575,8 +580,7 @@ local function mineralfinder_use(item, player, pointed_thing)
 	minetest.chat_send_player(player_name,
 		msg_yellow .. "[" .. label .. "]" .. msg_white ..
 		" Scan result for " .. msg_zero ..
-		ore_label[ore_name] ..  msg_white ..
-		" : " .. oremsg .. msg_white)
+		ore_type .. msg_white .. " : " .. oremsg .. msg_white)
         return item
 end
 
