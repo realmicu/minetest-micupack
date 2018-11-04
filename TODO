@@ -1,8 +1,4 @@
 
-minertools:
-	* redefine multidevice formspecs to react to combobox selection
-	* consider adding fire node (+effect) and snow/ice (-effect)
-
 moderntables:
 	* add half-height table
 	* add table with storage (2x8)

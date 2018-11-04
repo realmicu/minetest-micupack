@@ -65,9 +65,9 @@ if minetest.get_modpath("moreores") then
 end
 
 -- multidevice
-MODE_GEOTHERM = 1
-MODE_ORESCAN = 2
-MODE_OREFIND = 3
+local MODE_GEOTHERM = 1
+local MODE_ORESCAN = 2
+local MODE_OREFIND = 3
 local mode_name = { [MODE_GEOTHERM] = "Geothermometer",
 		    [MODE_ORESCAN] = "Mineral Scanner",
 		    [MODE_OREFIND] = "Mineral Finder" }
@@ -184,8 +184,14 @@ local function show_menu(item, player, pointed_thing)
 	local player_name = player:get_player_name()
 	local tool_def = item:get_definition()
 	tool_def._init_metadata(player, item)
-        minetest.show_formspec(player_name, tool_def.name,
-		tool_def._formspec(item))
+	if not tool_def._is_multidevice then
+		minetest.show_formspec(player_name, tool_def.name,
+			tool_def._formspec(item))
+	else
+		local mode = item:get_meta():get_int("mode")
+		minetest.show_formspec(player_name, tool_def.name,
+			tool_def._formspec[mode](item))
+	end
 end
 
 -- formspec callback
@@ -215,24 +221,28 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 	elseif formname == "minertools:portable_mining_computer" or
 	       formname == "minertools:advanced_mining_assistant" or
 	       formname == "minertools:ultimate_mining_gizmo" then
-		if fields then
-			if fields.mode then
-				tool_meta:set_int("mode",
-					rev_mode_name[fields.mode])
-				if play_snd then play_toggle(player_name) end
-				tool_upd = true
+		if fields and fields.mode then
+			local mode = rev_mode_name[fields.mode]
+			tool_meta:set_int("mode", mode)
+			if not fields.ok and not fields.quit then
+				local tool_def = tool:get_definition()
+				tool_def._init_metadata(player, tool)
+				minetest.show_formspec(player_name, formname,
+					tool_def._formspec[mode](tool))
 			end
-			if fields.range then
-				tool_meta:set_int("scan_range",
-					tonumber(fields.range))
-				if play_snd then play_click(player_name) end
-				tool_upd = true
-			end
-			if fields.ore then
-				tool_meta:set_string("ore_type", fields.ore)
-				if play_snd then play_click(player_name) end
-				tool_upd = true
-			end
+			if play_snd then play_toggle(player_name) end
+			tool_upd = true
+		end
+		if fields and fields.range then
+			tool_meta:set_int("scan_range",
+				tonumber(fields.range))
+			if play_snd then play_click(player_name) end
+			tool_upd = true
+		end
+		if fields and fields.ore then
+			tool_meta:set_string("ore_type", fields.ore)
+			if play_snd then play_click(player_name) end
+			tool_upd = true
 		end
 	end
 	if tool_upd then player:set_wielded_item(tool) end
@@ -294,13 +304,30 @@ local function mineralfinder_formspec(tool)
 	"button_exit[0.75,1.75;1.5,0.5;ok;OK]"
 end
 
-local function multidevice_formspec(tool)
+local function multidevice_formspec_gt(tool)
+	-- function requires all metadata to be accessible
+	-- (or initialized elsewhere)
+	local label = tool:get_definition().description
+	local mode_opts = ""
+	for i, n in ipairs(mode_name) do
+		mode_opts = mode_opts .. n
+		if i < #mode_name then mode_opts = mode_opts .. "," end
+	end
+	return "size[4.25,3,true]"..
+	"position[0.5,0.25]" ..
+	"no_prepend[]" ..
+	"label[0.5,0;" .. minetest.colorize("#FFFF00", label) .. "]" ..
+	"label[0,0.75;" .. minetest.colorize("#00FFFF", "Mode") .. "]" ..
+	"dropdown[1.75,0.625;2.5;mode;" .. mode_opts .. ";" ..
+		MODE_GEOTHERM .. "]" ..
+	"button_exit[1.25,2.75;1.5,0.5;ok;OK]"
+end
+
+local function multidevice_formspec_ms(tool)
 	-- function requires all metadata to be accessible
 	-- (or initialized elsewhere)
 	local tool_def = tool:get_definition()
 	local label = tool_def.description
-	local tool_meta = tool:get_meta()
-	local mode = tool_meta:get_int("mode")
 	local mode_opts = ""
 	for i, n in ipairs(mode_name) do
 		mode_opts = mode_opts .. n
@@ -308,14 +335,37 @@ local function multidevice_formspec(tool)
 	end
 	local range_min = tool_def._scan_range_min
 	local range_max = tool_def._scan_range_max
-	local range = tool_meta:get_int("scan_range")
+	local range = tool:get_meta():get_int("scan_range")
 	local range_opts = ""
 	for i = range_min, range_max, 1 do
 		range_opts = range_opts .. tostring(i)
 		if i < range_max then range_opts = range_opts .. "," end
 	end
+	return "size[4.25,3,true]"..
+	"position[0.5,0.25]" ..
+	"no_prepend[]" ..
+	"label[0.5,0;" .. minetest.colorize("#FFFF00", label) .. "]" ..
+	"label[0,0.75;" .. minetest.colorize("#00FFFF", "Mode") .. "]" ..
+	"dropdown[1.75,0.625;2.5;mode;" .. mode_opts .. ";" ..
+		MODE_ORESCAN .. "]" ..
+	"label[0.5,1.75;" .. " Scan range]" ..
+	"dropdown[2.5,1.625;1;range;" .. range_opts .. ";" ..
+		(range - range_min + 1) .. "]" ..
+	"button_exit[1.25,2.75;1.5,0.5;ok;OK]"
+end
+
+local function multidevice_formspec_mf(tool)
+	-- function requires all metadata to be accessible
+	-- (or initialized elsewhere)
+	local tool_def = tool:get_definition()
+	local label = tool_def.description
+	local mode_opts = ""
+	for i, n in ipairs(mode_name) do
+		mode_opts = mode_opts .. n
+		if i < #mode_name then mode_opts = mode_opts .. "," end
+	end
 	local ore_list = tool_def._find_ore_list
-	local ore_type = tool_meta:get_string("ore_type")
+	local ore_type = tool:get_meta():get_string("ore_type")
 	local ore_opts = ""
 	local ore_idx = 0
 	for i, n in ipairs(ore_list) do
@@ -323,21 +373,17 @@ local function multidevice_formspec(tool)
 		if i < #ore_list then ore_opts = ore_opts .. "," end
 		if n == ore_type then ore_idx = i end
 	end
-	return "size[4.25,4,true]"..
+	return "size[4.25,3,true]"..
 	"position[0.5,0.25]" ..
 	"no_prepend[]" ..
 	"label[0.5,0;" .. minetest.colorize("#FFFF00", label) .. "]" ..
 	"label[0,0.75;" .. minetest.colorize("#00FFFF", "Mode") .. "]" ..
 	"dropdown[1.75,0.625;2.5;mode;" .. mode_opts .. ";" ..
-		mode .. "]" ..
-	"label[0.5,1.75;" .. minetest.colorize("#00FFFF", "MS:") ..
-		" Scan range]" ..
-	"dropdown[2.5,1.625;1;range;" .. range_opts .. ";" ..
-		(range - range_min + 1) .. "]" ..
-	"label[0.5,2.75;" .. minetest.colorize("#00FFFF", "MF:") .. " Ore]" ..
-	"dropdown[2,2.625;1.5;ore;" .. ore_opts .. ";" ..
+		MODE_OREFIND .. "]" ..
+	"label[0.5,1.75;" .. " Ore]" ..
+	"dropdown[2,1.625;1.5;ore;" .. ore_opts .. ";" ..
 		ore_idx .. "]" ..
-	"button_exit[1.25,3.75;1.5,0.5;ok;OK]"
+	"button_exit[1.25,2.75;1.5,0.5;ok;OK]"
 end
 
 --[[
@@ -756,7 +802,9 @@ minetest.register_tool("minertools:portable_mining_computer", {
 	stack_max = 1,
 	range = 8,
 	_init_metadata = multidevice_init_metadata,
-	_formspec = multidevice_formspec,
+	_formspec = { [MODE_GEOTHERM] = multidevice_formspec_gt,
+		      [MODE_ORESCAN] = multidevice_formspec_ms,
+		      [MODE_OREFIND] = multidevice_formspec_mf },
 	_is_multidevice = true,
 	_temp_label = "PMC:Geothermometer",
 	_temp_radius = 10,
@@ -805,7 +853,9 @@ minetest.register_tool("minertools:advanced_mining_assistant", {
 	stack_max = 1,
 	range = 10,			-- PMC + 2
 	_init_metadata = multidevice_init_metadata,
-	_formspec = multidevice_formspec,
+	_formspec = { [MODE_GEOTHERM] = multidevice_formspec_gt,
+		      [MODE_ORESCAN] = multidevice_formspec_ms,
+		      [MODE_OREFIND] = multidevice_formspec_mf },
 	_is_multidevice = true,
 	_temp_label = "AMA:Geothermometer",
 	_temp_radius = 12,		-- PMC + 2
@@ -857,7 +907,9 @@ minetest.register_tool("minertools:ultimate_mining_gizmo", {
 	stack_max = 1,
 	range = 12,			-- AMA + 2
 	_init_metadata = multidevice_init_metadata,
-	_formspec = multidevice_formspec,
+	_formspec = { [MODE_GEOTHERM] = multidevice_formspec_gt,
+		      [MODE_ORESCAN] = multidevice_formspec_ms,
+		      [MODE_OREFIND] = multidevice_formspec_mf },
 	_is_multidevice = true,
 	_temp_label = "UMG:Geothermometer",
 	_temp_radius = 16,		-- AMA + 4
