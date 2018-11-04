@@ -1,10 +1,21 @@
 
+slprogtools:
+	* consider custom naming of copier dongle the same way book gets titled
+	  so device can be stored and treated as archive copies for software
+
 moderntables:
 	* add half-height table
 	* add table with storage (2x8)
 
 biogasmachines:
 	* Coal Gasifier, Biogas Smelter - behaviour based on Quarry and Grinder
+	* Coal Gasifier - convert coal block to Biogas stack, do not use Biogas
+	  ("electric") as it would create split loop complications in automated
+	  processing; leftover is gravel? dirt? none?
+	* Biogas Smelter - furnace powered by Biogas
 	* High-Temp Compressor - heat up cobblestone using Biogas and change it
-	  (slowly and with lot of energy) to obsidian
+	  (slowly and with lot of energy) to obsidian; also compress coal block
+	  to diamond using the same technique; make other combinations possible
+	  through custom recipe registration; allow quicker work by providing
+	  cooling water via pipeworks
 
