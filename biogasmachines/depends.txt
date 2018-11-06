@@ -1,5 +1,6 @@
 default
 tubelib
 tubelib_addons1
+pipeworks?
 unified_inventory?
 moreores?

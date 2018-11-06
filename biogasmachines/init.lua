@@ -1,17 +1,23 @@
 --[[
 
-        Tubelib Biogas Burners Mod
-        ==========================
+	=======================================================================
+	Tubelib Biogas Machines Mod
+	by Micu (c) 2018
 
-	Biogas machines for TechPack by Joachim Stolberg
+	Copyright (C) 2018 Michal Cieslakiewicz
 
-        Copyright (C) 2018 Michal Cieslakiewicz
-
-        LGPLv2.1+
-        See LICENSE.txt for more information
-
+	License: LGPLv2.1+
+	Media: CC BY-SA
+	=======================================================================
+	
 ]]--
 
+biogasmachines = {}
+
+-- helper functions
+dofile(minetest.get_modpath("biogasmachines").."/waterpipes.lua")
+
+-- machines
+dofile(minetest.get_modpath("biogasmachines").."/freezer.lua")
 dofile(minetest.get_modpath("biogasmachines").."/gasifier.lua")
 dofile(minetest.get_modpath("biogasmachines").."/smelter.lua")
-
