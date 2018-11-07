@@ -18,6 +18,21 @@
 	
 ]]--
 
+-- all pipeworks objects that can carry water but are not junctions
+local pipeworks_straight_objects = {
+	"pipeworks:straight_pipe_loaded",
+	"pipeworks:entry_panel_loaded",
+	"pipeworks:valve_on_loaded",
+	"pipeworks:flow_sensor_loaded" }
+
+-- check if node is in pipeworks array
+local function is_str_pipe_obj(name)
+        for _, n in ipairs(pipeworks_straight_objects) do
+                if n == name then return true end
+        end
+        return false
+end
+
 -- Check if machine is connected to pipe network and water flows into machine
 -- Parameters: node position, node object (optional)
 -- Returns: true if water is flowing into device node
@@ -51,16 +66,8 @@ function biogasmachines.is_pipe_with_water(pos, opt_node)
 		return true
 	end
 	-- 1. straight vertical pipes, valves and sensors
-	if (above and above.param2 == 17 and
-	     (above.name == "pipeworks:straight_pipe_loaded" or
-	      above.name == "pipeworks:entry_panel_loaded" or
-	      above.name == "pipeworks:valve_on_loaded" or
-	      above.name == "pipeworks:flow_sensor_loaded")) or
-	   (below and below.param2 == 17 and
-	     (below.name == "pipeworks:straight_pipe_loaded" or
-	      below.name == "pipeworks:entry_panel_loaded" or
-	      below.name == "pipeworks:valve_on_loaded" or
-	      below.name == "pipeworks:flow_sensor_loaded")) then
+	if (above and above.param2 == 17 and is_str_pipe_obj(above.name)) or
+	   (below and below.param2 == 17 and is_str_pipe_obj(below.name)) then
 		return true
 	end
 	return false

@@ -15,7 +15,7 @@
 biogasmachines = {}
 
 -- helper functions
-dofile(minetest.get_modpath("biogasmachines").."/waterpipes.lua")
+dofile(minetest.get_modpath("biogasmachines").."/functions.lua")
 
 -- machines
 dofile(minetest.get_modpath("biogasmachines").."/freezer.lua")

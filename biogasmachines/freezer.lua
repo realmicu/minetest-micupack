@@ -24,7 +24,7 @@
 ]]--
 
 minetest.register_node("biogasmachines:freezer", {
-	description = "Tubelib Biogas Freezer",
+	description = "Tubelib Water Freezer",
 	tiles = {
 		-- up, down, right, left, back, front
 		"tubelib_front.png",
@@ -45,11 +45,18 @@ minetest.register_node("biogasmachines:freezer", {
 	pipe_connections = { top = 1, bottom = 1 },
 
 	after_place_node = function(pos, placer, itemstack, pointed_thing)
+		local node = minetest.get_node(pos)
 		local meta = minetest.get_meta(pos)
 		local number = tubelib.add_node(pos, "biogasmachines:freezer")
+		local inv = meta:get_inventory()
+		inv:set_size('src', 9)
+		inv:set_size('fuel', 1)
+		inv:set_size('dst', 18)
+		local label = minetest.registered_nodes[node.name].description
 		meta:set_string("number", number)
-		meta:set_string("infotext", "Tubelib Biogas Freezer " .. number)
 		meta:set_string("owner", placer:get_player_name())
+		meta:set_string("infotext", label .. " " .. number .. ": stopped")
+		--meta:set_string("formspec", formspec(tubelib.STOPPED))
 		if minetest.get_modpath("pipeworks") then
 			pipeworks.scan_for_pipe_objects(pos)
 		end
