@@ -39,16 +39,6 @@
 furnacemonitor = {}
 
 --[[
-	---------
-	Variables
-	---------
-]]--
-
--- chat message state colors
-local msgclr = { ["fault"] = "#FFBFBF", ["standby"] = "#00FFFF",
-		 ["stopped"] = "#BFBFFF", ["running"] = "#BFFFBF" }
-
---[[
 	-------
 	Helpers
 	-------
