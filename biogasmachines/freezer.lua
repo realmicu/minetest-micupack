@@ -20,6 +20,28 @@
 	water pipe detector is also off. This is a design feature to save
 	CPU resources for inactive machine (timer is stopped).
 
+	Operational info:
+	* machine first checks for buckets with water, if there are none
+	  then tries to take water from pipes
+	* when fuel ends, machine switches off automatically and has to
+	  be powered on by player after loading Biogas
+	* if there is nothing to freeze, machine enters standby mode; it
+	  will automatically pick up work as soon as any water source becomes
+	  available again
+	* there is 1 tick gap between items to unload ice and load internal
+	  water tank or freezing tray
+	* Biogas is used only when device actually freezes
+	* partially frozen items (due to work being interrupted by on/off
+	  switch) have to be frozen again from beginning, Biogas used for
+	  such partial freeze is not recoverable
+	* bucket freezing tray cannot be emptied manually, it becomes empty
+	  only when device finishes converting water to ice
+	* when using pipes, internal water tank is filled completely before
+	  process starts; shutting down water source during freezing does
+	  not break it
+	* machine cannot be recovered unless input, output and fuel trays
+	  are all empty
+
 	Note: due to pipeworks being WIP, the only valid water connections
 	for now are from top and bottom (see functions.lua).
 
@@ -34,10 +56,15 @@
 	---------
 ]]--
 
-local BIOGAS_TIME_SEC = 24	-- Biogas work time
-local ICE_TIME_SEC = 4		-- Ice creation time
-local TIMER_TICK_SEC = 1	-- Node timer tick
-local TICKS_TO_SLEEP = 5	-- Tubelib standby
+-- timing
+local BIOGAS_TIME_SEC = 24		-- Biogas work time
+local ICE_TIME_SEC = 4			-- Ice creation time
+local TIMER_TICK_SEC = 1		-- Node timer tick
+local TICKS_TO_SLEEP = 5		-- Tubelib standby
+-- machine inventory
+local INV_H = 3				-- Inventory height
+local INV_IN_W = 4			-- Input inventory width
+local INV_OUT_W = (6 - INV_IN_W)	-- Output inventory width
 -- item processed
 local SOURCE_EMPTY = 0
 local SOURCE_BUCKET = 1
@@ -58,31 +85,43 @@ local water_buckets = { "bucket:bucket_water", "bucket:bucket_river_water" }
 -- item_percent - ice completion
 -- show_icons - show image hints (bool)
 local function formspec(state, water_pipe, fuel_percent, item_percent, show_icons)
+	local h = tostring(INV_H)
+	local wi = tostring(INV_IN_W)
+	local wo = tostring(INV_OUT_W)
+	local pr = tostring(INV_IN_W + 1)
+	local po = tostring(INV_IN_W + 2)
 	return "size[8,8.25]" ..
 	default.gui_bg ..
 	default.gui_bg_img ..
 	default.gui_slots ..
-	"list[context;src;0,0;3,3;]" ..
+	"list[context;src;0,0;" .. wi .. "," .. h .. ";]" ..
 	(show_icons and "item_image[0,0;1,1;bucket:bucket_water]" or "") ..
-	"list[context;cur;3,0;1,1;]" ..
-	"image[4,0;1,1;biogasmachines_freezer_pipe_inv_" ..
+	"list[context;cur;" .. wi .. ",0;1,1;]" ..
+	"image[" .. pr .. ",0;1,1;biogasmachines_freezer_pipe_inv_" ..
 		(water_pipe and "fg" or "bg") .. ".png]" ..
-	"image[3,1;1,1;biogasmachines_freezer_inv_bg.png^[lowpart:" ..
+	"image[" .. wi ..
+		",1;1,1;biogasmachines_freezer_inv_bg.png^[lowpart:" ..
 		tostring(fuel_percent) ..
 		":biogasmachines_freezer_inv_fg.png]" ..
-	"image[4,1;1,1;gui_furnace_arrow_bg.png^[lowpart:" ..
+	"image[" .. pr .. ",1;1,1;gui_furnace_arrow_bg.png^[lowpart:" ..
 		tostring(item_percent) ..
 		":gui_furnace_arrow_fg.png^[transformR270]" ..
-	"list[context;fuel;3,2;1,1;]" ..
-	(show_icons and "item_image[3,2;1,1;tubelib_addons1:biogas]" or "") ..
-	"image_button[4,2;1,1;" .. tubelib.state_button(state) .. ";button;]" ..
-	"label[1.25,3.25;" .. minetest.colorize("#B0B0B0",
-		"(1 Biogas lasts for " .. tostring(BIOGAS_TIME_SEC) ..
-		" seconds and produces " ..
-		tostring(BIOGAS_TIME_SEC / ICE_TIME_SEC) ..
-		" Ice cubes)") .. "]" ..
-	(show_icons and "item_image[5,0;1,1;default:ice]" or "") ..
-	"list[context;dst;5,0;3,3;]" ..
+	"list[context;fuel;" .. wi .. ",2;1,1;]" ..
+	(show_icons and "item_image[" .. wi ..
+		",2;1,1;tubelib_addons1:biogas]" or "") ..
+	"image_button[" .. pr .. ",2;1,1;" .. tubelib.state_button(state) ..
+		";button;]" ..
+	"item_image[1,3.25;0.5,0.5;tubelib_addons1:biogas]" ..
+	"label[1.5,3.25;= " .. tostring(BIOGAS_TIME_SEC) .. " sec]" ..
+	"item_image[3,3.25;0.5,0.5;default:ice]" ..
+	"label[3.5,3.25;= " .. tostring(ICE_TIME_SEC) .. " sec]" ..
+	"item_image[5.25,3.25;0.5,0.5;tubelib_addons1:biogas]" ..
+	"image[5.75,3.25;0.5,0.5;tubelib_gui_arrow.png^[resize:16x16]" ..
+	"item_image[6.25,3.25;0.5,0.5;default:ice]" ..
+	"label[6.75,3.25;x " .. tostring(BIOGAS_TIME_SEC / ICE_TIME_SEC) ..
+		"]" ..
+	(show_icons and "item_image[" .. po .. ",0;1,1;default:ice]" or "") ..
+	"list[context;dst;" .. po .. ",0;" .. wo .. "," .. h .. ";]" ..
 	"list[current_player;main;0,4;8,1;]" ..
 	"list[current_player;main;0,5.25;8,3;8]" ..
 	"listring[context;dst]" ..
@@ -100,8 +139,17 @@ end
 	-------
 ]]--
 
+-- check if item is bucket with water (bool)
+local function is_water_bucket(stack)
+	local stackname = stack:get_name()
+	for _, n in ipairs(water_buckets) do
+		if stackname == n then return true end
+	end
+	return false
+end
+
 -- get bucket with water (itemstack)
-local function get_full_bucket(inv, listname)
+local function get_water_bucket(inv, listname)
 	local stack = ItemStack({})
 	for _, i in ipairs(water_buckets) do
 		stack = inv:remove_item(listname, ItemStack(i .. " 1"))
@@ -214,12 +262,8 @@ local function allow_metadata_inventory_put(pos, listname, index, stack, player)
 	if minetest.is_protected(pos, player:get_player_name()) then
 		return 0
 	end
-	local meta = minetest.get_meta(pos)
-	local inv = meta:get_inventory()
-	local stackname = stack:get_name()
 	if listname == "src" then
-		if stackname == "bucket:bucket_water" or
-		   stackname == "bucket:bucket_river_water" then
+		if is_water_bucket(stack) then
 			return stack:get_count()
 		else
 			return 0
@@ -253,6 +297,30 @@ local function allow_metadata_inventory_take(pos, listname, index, stack, player
 		return 0
 	end
 	return stack:get_count()
+end
+
+-- punch machine to see status info
+local function on_punch(pos, node, puncher, pointed_thing)
+	local meta = minetest.get_meta(pos)
+	local player_name = puncher:get_player_name()
+	if meta:get_string("owner") ~= player_name then
+		return false
+	end
+	local msgclr = { ["fault"] = "#FFBFBF",
+			 ["standby"] = "#BFFFFF",
+			 ["stopped"] = "#BFBFFF",
+			 ["running"] = "#BFFFBF",
+			 ["true"] = "#BFFFBF",
+			 ["false"] = "#BFFFFF" }
+	local state = tubelib.statestring(meta:get_int("running"))
+	local pipe = tostring(biogasmachines.is_pipe_with_water(pos, node))
+	minetest.chat_send_player(player_name,
+		minetest.colorize("#FFFF00", "[WaterFreezer:" ..
+		meta:get_string("number") .. "]") .. " Status is " ..
+		minetest.colorize(msgclr[state], "\"" .. state .. "\"") ..
+		", water pipe is " ..
+		minetest.colorize(msgclr[pipe], "\"" .. pipe .. "\""))
+	return true
 end
 
 -- formspec callback
@@ -325,7 +393,7 @@ local function on_timer(pos, elapsed)
 		end
 		-- process another water unit
 		if source == SOURCE_BUCKET then
-			local inp = get_full_bucket(inv, "src")
+			local inp = get_water_bucket(inv, "src")
 			if inp:is_empty() then
 				-- oops
 				return freezer_fault(pos)
@@ -402,6 +470,7 @@ minetest.register_node("biogasmachines:freezer", {
 
 	can_dig = can_dig,
 	after_dig_node = after_dig_node,
+	on_punch = on_punch,
 	on_rotate = screwdriver.disallow,
 	on_timer = on_timer,
 	on_receive_fields = on_receive_fields,
@@ -417,10 +486,10 @@ minetest.register_node("biogasmachines:freezer", {
 			pipeworks.scan_for_pipe_objects(pos)
 		end
 		local inv = meta:get_inventory()
-		inv:set_size('src', 9)
+		inv:set_size('src', INV_H * INV_IN_W)
 		inv:set_size('cur', 1)
 		inv:set_size('fuel', 1)
-		inv:set_size('dst', 9)
+		inv:set_size('dst', INV_H * INV_OUT_W)
 		local label = minetest.registered_nodes[node.name].description
 		meta:set_string("number", number)
 		meta:set_string("owner", placer:get_player_name())
@@ -430,21 +499,6 @@ minetest.register_node("biogasmachines:freezer", {
 		meta:set_int("item_ticks", 0)
 		meta:set_string("infotext", label .. " " .. number .. ": stopped")
 		meta:set_string("formspec", formspec(tubelib.STOPPED, false, 0, 0, true))
-	end,
-
-	on_punch = function(pos, node, puncher, pointed_thing)
-		-- DEBUG
-		local meta = minetest.get_meta(pos)
-		local player_name = puncher:get_player_name()
-		if meta:get_string("owner") ~= player_name then
-			return false
-		end
-		minetest.chat_send_player(player_name,
-			minetest.colorize("#FFFF00", "[BiogasFreezer:" ..
-			meta:get_string("number") .. "] ") ..
-			(biogasmachines.is_pipe_with_water(pos, node)
-			and "Water flows" or "No water"))
-		return true
 	end,
 })
 
@@ -472,6 +526,7 @@ minetest.register_node("biogasmachines:freezer_active", {
 
 	can_dig = can_dig,
 	after_dig_node = after_dig_node,
+	on_punch = on_punch,
 	on_rotate = screwdriver.disallow,
 	on_timer = on_timer,
 	on_receive_fields = on_receive_fields,
@@ -480,7 +535,43 @@ minetest.register_node("biogasmachines:freezer_active", {
 	allow_metadata_inventory_take = allow_metadata_inventory_take,
 })
 
--- TODO: tubelib registration and callbacks
+tubelib.register_node("biogasmachines:freezer", { "biogasmachines:freezer_active" }, {
+
+	on_push_item = function(pos, side, item)
+		local meta = minetest.get_meta(pos)
+		if is_water_bucket(item) then
+			return tubelib.put_item(meta, "src", item)
+		elseif item:get_name() == "tubelib_addons1:biogas" then
+			return tubelib.put_item(meta, "fuel", item)
+		end
+	return false
+	end,
+
+	on_pull_item = function(pos, side)
+		local meta = minetest.get_meta(pos)
+		return tubelib.get_item(meta, "dst")
+	end,
+
+	on_unpull_item = function(pos, side, item)
+		local meta = minetest.get_meta(pos)
+		return tubelib.put_item(meta, "dst", item)
+	end,
+
+	on_recv_message = function(pos, topic, payload)
+		local meta = minetest.get_meta(pos)
+		if topic == "on" then
+                        freezer_start(pos)
+		elseif topic == "off" then
+			freezer_stop(pos)
+		elseif topic == "state" then
+			return tubelib.statestring(meta:get_int("running"))
+		elseif topic == "fuel" then
+			return tubelib.fuelstate(meta, "fuel")
+		else
+			return "unsupported"
+		end
+	end,
+})
 
 --[[
 	--------
