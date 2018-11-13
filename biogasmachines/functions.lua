@@ -23,7 +23,18 @@ local pipeworks_straight_objects = {
 	"pipeworks:straight_pipe_loaded",
 	"pipeworks:entry_panel_loaded",
 	"pipeworks:valve_on_loaded",
-	"pipeworks:flow_sensor_loaded" }
+	"pipeworks:flow_sensor_loaded",
+}
+
+-- direction attributes for pipe connections
+local ctable = {
+	["top"] = { dv = { x = 0, y = 1, z = 0 }, p2 = { 17 } },
+	["bottom"] = { dv = { x = 0, y = -1, z = 0 }, p2 = { 17 } },
+	["front"] = { dv = { x = 0, y = 0, z = -1 }, p2 = { 0, 2 } },
+	["back"] = { dv = { x = 0, y = 0, z = 1 }, p2 = { 0, 2 } },
+	["left"] = { dv = { x = -1, y = 0, z = 0 }, p2 = { 1, 3 } },
+	["right"] = { dv = { x = 1, y = 0, z = 0 }, p2 = { 1, 3 } },
+}
 
 --[[
 	------
@@ -55,14 +66,6 @@ function biogasmachines.is_pipe_with_water(pos, opt_node)
 	if not node_def then return false end
 	local pipe_con = node_def.pipe_connections
 	if not pipe_con then return false end
-	local ctable = {
-		["top"] = { dv = { x = 0, y = 1, z = 0 }, p2 = { 17 } },
-		["bottom"] = { dv = { x = 0, y = -1, z = 0 }, p2 = { 17 } },
-		["front"] = { dv = { x = 0, y = 0, z = -1 }, p2 = { 0, 2 } },
-		["back"] = { dv = { x = 0, y = 0, z = 1 }, p2 = { 0, 2 } },
-		["left"] = { dv = { x = -1, y = 0, z = 0 }, p2 = { 1, 3 } },
-		["right"] = { dv = { x = 1, y = 0, z = 0 }, p2 = { 1, 3 } },
-	}
 	for d, v in pairs(pipe_con) do
 		if v then
 			local d_node = minetest.get_node_or_nil(
