@@ -38,7 +38,7 @@
 	  only when device finishes converting water to ice
 	* when using pipes, internal water tank is filled completely before
 	  process starts; shutting down water source during freezing does
-	  not break it
+	  not stop it
 	* machine cannot be recovered unless input, output and fuel trays
 	  are all empty
 
@@ -520,7 +520,12 @@ minetest.register_node("biogasmachines:freezer_active", {
 	is_ground_content = false,
 	sounds = default.node_sound_metal_defaults(),
 
-	pipe_connections = { top = 1, bottom = 1 },
+	pipe_connections = { top = 1,
+			     bottom = 1,
+			     front = 1,
+			     back = 1,
+			     left = 1,
+			     right = 1 },
 
 	can_dig = can_dig,
 	after_dig_node = after_dig_node,
@@ -531,6 +536,7 @@ minetest.register_node("biogasmachines:freezer_active", {
 	allow_metadata_inventory_put = allow_metadata_inventory_put,
 	allow_metadata_inventory_move = allow_metadata_inventory_move,
 	allow_metadata_inventory_take = allow_metadata_inventory_take,
+	drop = "biogasmachines:freezer",
 })
 
 tubelib.register_node("biogasmachines:freezer", { "biogasmachines:freezer_active" }, {
@@ -577,5 +583,27 @@ tubelib.register_node("biogasmachines:freezer", { "biogasmachines:freezer_active
 	--------
 ]]--
 
--- TODO: crafting
+minetest.register_craft({
+	output = "biogasmachines:freezer",
+	recipe = {
+		{ "default:steelblock", "default:glass", "default:steelblock" },
+		{ "default:mese_crystal", "bucket:bucket_empty", "tubelib:tube1" },
+		{ "group:wood", "default:copper_ingot", "group:wood" },
+	},
+})
 
+if minetest.get_modpath("unified_inventory") then
+	unified_inventory.register_craft_type("freezing", {
+		description = "Freezing",
+		icon = 'biogasmachines_freezer_inv_fg.png',
+		width = 1,
+		height = 1,
+	})
+	for _, i in ipairs(water_buckets) do
+		unified_inventory.register_craft({
+			type = "freezing",
+			items = { i },
+			output = "default:ice",
+		})
+	end
+end
