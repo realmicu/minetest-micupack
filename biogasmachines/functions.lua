@@ -25,9 +25,15 @@ local pipeworks_straight_objects = {
 	"pipeworks:valve_on_loaded",
 	"pipeworks:flow_sensor_loaded" }
 
--- check if node is in pipeworks array
-local function is_str_pipe_obj(name)
-        for _, n in ipairs(pipeworks_straight_objects) do
+--[[
+	------
+	Public
+	------
+]]--
+
+-- check if node is in array
+function biogasmachines.is_member_of(name, array)
+        for _, n in ipairs(array) do
                 if n == name then return true end
         end
         return false
@@ -49,26 +55,30 @@ function biogasmachines.is_pipe_with_water(pos, opt_node)
 	if not node_def then return false end
 	local pipe_con = node_def.pipe_connections
 	if not pipe_con then return false end
-	local above = nil
-	local below = nil
-	if pipe_con.top then
-		above = minetest.get_node_or_nil(
-			vector.add(pos, { x = 0, y = 1, z = 0 }))
-	end
-	if pipe_con.bottom then
-		below = minetest.get_node_or_nil(
-			vector.add(pos, { x = 0, y = -1, z = 0 }))
-	end
-	-- try to detect connected pipes, valves etc. with water:
-	-- 0. normal pipes at top or bottom (they will attach automatically)
-	if (above and string.match(above.name, "^pipeworks:pipe_.*_loaded")) or
-	   (below and string.match(below.name, "^pipeworks:pipe_.*_loaded")) then
-		return true
-	end
-	-- 1. straight vertical pipes, valves and sensors
-	if (above and above.param2 == 17 and is_str_pipe_obj(above.name)) or
-	   (below and below.param2 == 17 and is_str_pipe_obj(below.name)) then
-		return true
+	local ctable = {
+		["top"] = { dv = { x = 0, y = 1, z = 0 }, p2 = { 17 } },
+		["bottom"] = { dv = { x = 0, y = -1, z = 0 }, p2 = { 17 } },
+		["front"] = { dv = { x = 0, y = 0, z = -1 }, p2 = { 0, 2 } },
+		["back"] = { dv = { x = 0, y = 0, z = 1 }, p2 = { 0, 2 } },
+		["left"] = { dv = { x = -1, y = 0, z = 0 }, p2 = { 1, 3 } },
+		["right"] = { dv = { x = 1, y = 0, z = 0 }, p2 = { 1, 3 } },
+	}
+	for d, v in pairs(pipe_con) do
+		if v then
+			local d_node = minetest.get_node_or_nil(
+				vector.add(pos, ctable[d].dv))
+			if d_node and string.match(d_node.name,
+				"^pipeworks:pipe_.*_loaded") then
+				return true
+			end
+			if d_node and biogasmachines.is_member_of(
+					d_node.param2, ctable[d].p2)
+				and biogasmachines.is_member_of(
+					d_node.name, pipeworks_straight_objects)
+					then
+				return true
+			end
+		end
 	end
 	return false
 end

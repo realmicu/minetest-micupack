@@ -42,9 +42,6 @@
 	* machine cannot be recovered unless input, output and fuel trays
 	  are all empty
 
-	Note: due to pipeworks being WIP, the only valid water connections
-	for now are from top and bottom (see functions.lua).
-
 	License: LGPLv2.1+
 	=======================================================================
 	
@@ -142,10 +139,7 @@ end
 -- check if item is bucket with water (bool)
 local function is_water_bucket(stack)
 	local stackname = stack:get_name()
-	for _, n in ipairs(water_buckets) do
-		if stackname == n then return true end
-	end
-	return false
+	return biogasmachines.is_member_of(stackname, water_buckets)
 end
 
 -- get bucket with water (itemstack)
@@ -466,8 +460,12 @@ minetest.register_node("biogasmachines:freezer", {
 	is_ground_content = false,
 	sounds = default.node_sound_metal_defaults(),
 
-	pipe_connections = { top = 1, bottom = 1 },
-
+	pipe_connections = { top = 1,
+			     bottom = 1,
+			     front = 1,
+			     back = 1,
+			     left = 1,
+			     right = 1 },
 	can_dig = can_dig,
 	after_dig_node = after_dig_node,
 	on_punch = on_punch,
