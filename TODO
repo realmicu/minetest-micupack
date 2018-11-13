@@ -8,9 +8,6 @@ moderntables:
 	* add table with storage (2x8)
 
 biogasmachines:
-	* Coal Gasifier, Biogas Smelter - behaviour based on Quarry and Grinder
-	* Freezer - machine to produce ice cubes from water (either in buckets
-	  or provided via pipeworks)
 	* Coal Gasifier - convert coal block to Biogas stack, do not use Biogas
 	  ("electric") as it would create split loop complications in automated
 	  processing; leftover is gravel? dirt? none?

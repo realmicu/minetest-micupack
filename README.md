@@ -51,6 +51,7 @@ This modpack contains:
   monitored node. In case of wrong orientation use screwdriver.
 
   Status:
+
   - "fault" - monitor is not placed on a furnace
   - "stopped" - furnace is not smelting/cooking
   - "running" - furnace is smelting/cooking items
@@ -61,7 +62,27 @@ This modpack contains:
 
 * Biogas Machines
 
-  Work in progress, only a stub for now. Planned to expand TechPack with biogas-fuelled
-  furnace, machine to extract biogas from coal blocks and a high temperature compressor
-  to convert (albeit slowly) stone to obsidian.
+  Expands Tubelib (and TechPack) with various machines that use Biogas either as a product
+  or a power source.  Work in progress!
+
+  Available:
+
+  - Water Freezer - metal box to freeze water to ice using Biogas as coolant; water can
+    be supplied in buckets or (if pipeworks are installed) through pipes; one water bucket
+    is converted to one ice cube, in case of pipes there is no need for any containers but
+    water should be reaching device via pipelines; empty buckets are returned as secondary
+    products so Freezer can be easily paired with Liquid Sampler and other Tubelib machinery
+
+  Planned:
+
+  - Biogas Furnace - modern furnace powered by Biogas instead of coal or wood; accepts
+    all recipes from original furnace as well as new custom ones; probably will also allow
+    to smelt unused metal tools and armor back to single ingots
+  - Coal Gasifier - machine to extract Biogas from Coal blocks (not lumps); this will allow
+    to convert this common fossil fuel for Biogas Furnace and prevent it from pile up in
+    inventory
+  - High Temperature Compressor - advanced machine to convert (albeit slowly) stone to obsidian
+    and coal block to diamonds; will require water supplied either via buckets or through
+    pipes (like freezer)
+  - Portable Biogas Torch - a tool to melt down ice and produce water source from it
 

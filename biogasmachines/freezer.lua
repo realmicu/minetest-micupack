@@ -441,16 +441,30 @@ end
 ]]--
 
 minetest.register_node("biogasmachines:freezer", {
-	-- TODO: textures
 	description = "Tubelib Water Freezer",
 	tiles = {
 		-- up, down, right, left, back, front
-		"tubelib_front.png",
-		"tubelib_front.png",
-		"tubelib_front.png",
-		"tubelib_front.png",
-		"tubelib_front.png",
-		"default_steel_block.png",
+		"biogasmachines_freezer_top.png",
+		"biogasmachines_freezer_bottom.png",
+		"biogasmachines_freezer_side.png",
+		"biogasmachines_freezer_side.png",
+		"biogasmachines_freezer_side.png",
+		"biogasmachines_freezer_side.png"
+	},
+	drawtype = "nodebox",
+	node_box = {
+		type = "fixed",
+		fixed = {
+			{ -0.5, -0.375, -0.5, 0.5, 0.5, 0.5 },
+			{ -0.5, -0.5, -0.5, -0.375, -0.375, -0.375 },
+			{ 0.375, -0.5, -0.5, 0.5, -0.375, -0.375 },
+			{ 0.375, -0.5, 0.375, 0.5, -0.375, 0.5 },
+			{ -0.5, -0.5, 0.375, -0.375, -0.375, 0.5 },
+		}
+	},
+	selection_box = {
+		type = "fixed",
+		fixed = { -0.5, -0.5, -0.5, 0.5, 0.5, 0.5 },
 	},
 
 	paramtype = "light",
@@ -501,16 +515,39 @@ minetest.register_node("biogasmachines:freezer", {
 })
 
 minetest.register_node("biogasmachines:freezer_active", {
-	-- TODO: textures
 	description = "Tubelib Water Freezer",
 	tiles = {
 		-- up, down, right, left, back, front
-		"tubelib_front.png",
-		"tubelib_front.png",
-		"tubelib_front.png",
-		"tubelib_front.png",
-		"tubelib_front.png",
-		"default_ice.png",
+		{
+			image = "biogasmachines_freezer_active_top.png",
+			backface_culling = false,
+			animation = {
+				type = "vertical_frames",
+				aspect_w = 32,
+				aspect_h = 32,
+				length = 4.0,
+			},
+		},
+		"biogasmachines_freezer_bottom.png",
+		"biogasmachines_freezer_side.png",
+		"biogasmachines_freezer_side.png",
+		"biogasmachines_freezer_side.png",
+		"biogasmachines_freezer_side.png"
+	},
+	drawtype = "nodebox",
+	node_box = {
+		type = "fixed",
+		fixed = {
+			{ -0.5, -0.375, -0.5, 0.5, 0.5, 0.5 },
+			{ -0.5, -0.5, -0.5, -0.375, -0.375, -0.375 },
+			{ 0.375, -0.5, -0.5, 0.5, -0.375, -0.375 },
+			{ 0.375, -0.5, 0.375, 0.5, -0.375, 0.5 },
+			{ -0.5, -0.5, 0.375, -0.375, -0.375, 0.5 },
+		}
+	},
+	selection_box = {
+		type = "fixed",
+		fixed = { -0.5, -0.5, -0.5, 0.5, 0.5, 0.5 },
 	},
 
 	paramtype = "light",
