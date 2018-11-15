@@ -1,26 +1,26 @@
 
 --[[
 
-	Tubelib Biogas Burn Mod
-	=======================
+	=======================================================================
+	Tubelib Biogas Machines Mod
+	by Micu (c) 2018
 
 	Copyright (C) 2018 Michal Cieslakiewicz
-
-	LGPLv2.1+
-	See LICENSE.txt for more information
-
-	smelter.lua
 	
 	Biogas-fuelled burner that smelts and cookes like standard furnace
+	TODO: be more descriptive
+
+	License: LGPLv2.1+
+	=======================================================================
 	
 ]]--
 
 
-minetest.register_node("biogasmachines:smelter", {
-	description = "Tubelib Biogas Smelter",
+minetest.register_node("biogasmachines:gasfurnace", {
+	description = "Tubelib Biogas Furnace",
 	tiles = {
 		-- up, down, right, left, back, front
-		"biogasmachines_smelter_top.png",
+		"biogasmachines_gasfurnace_top.png",
 		"tubelib_front.png",
 		"tubelib_front.png",
 		"tubelib_front.png",
@@ -35,3 +35,5 @@ minetest.register_node("biogasmachines:smelter", {
 	is_ground_content = false,
 	sounds = default.node_sound_wood_defaults(),
 })
+
+-- TODO: put machine code here
