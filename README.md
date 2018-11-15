@@ -1,13 +1,15 @@
-Minetest modpack, tested with version 0.4.17.1.
+# MicuPack v0.4
+
+**Minetest modpack by (real)micu, tested with Minetest 0.4.17.1 and Minetest Game**
 
 This modpack contains:
 
-* Modern Tables
+* **Modern Tables** (moderntables)
 
-  Simple wooden tables. To be expanded.
+  Simple wooden tables. *To be expanded.*
 
 
-* Miner Tools
+* **Miner Tools** (minertools)
 
   Electronic gadgets for professional miners. Inspired by mod called 'Mineral Detector'.
   
@@ -23,27 +25,28 @@ This modpack contains:
   - all-in-one versions of above devices, each one with improved characteristics
 
 
-* SaferLua Programming Tools
+* **SaferLua Programming Tools** (slprogtools)
 
   Devices for interacting with SaferLua Controller from TechPack mod:
 
   - Memory Copier - portable dongle to transfer code between SL Controllers in much simpler
-    and faster fashion than copying it with text books
+    and faster way than copying it with text books
   - Memory Programmer - improved Memory Copier, with read/write protection to prevent
     accidental memory loss and code injection functionality (works like original Programmer
-    but for SL Controllers); the latter allows to replace special marker in init() section
+    but for SL Controllers); it allows to replace special marker in init() section
     code with array containing collected Tubelib numbers, making redeployments of SL
-    Controllers (for example for mobile mining with Quarries and Pushers) much easier
+    Controllers much easier (for example for mobile mining with Quarries and Pushers)
 
-  Note: due to formspec implementation, only inactive tabs can be populated - before code
-  upload/rewrite please change active tab on SaferLua Controller to 'outp' or 'help'.
+  *Note: due to node's formspec implementation, only inactive tabs can be populated - before
+  code upload/rewrite please change active tab on SaferLua Controller to 'outp' or 'help'.*
 
 
-* Furnace Monitor
+* **Furnace Monitor** (furnacemonitor)
 
   This simple device allows to monitor Minetest Game standard furnace with Tubelib/Smartline
   devices that are capable of reading Tubelib node state (like SaferLua Controllers etc).
-  It receives 4-digit number and can be referred like any other compatible read-only node.
+  It gets standard 4-digit Tubelib ID number and can be referred like any other compatible
+  read-only node.
   Monitor checks attached node only when status is requested so it does not consume CPU
   resources when idle (no timers).
 
@@ -60,18 +63,19 @@ This modpack contains:
   Punch node to see current status.
 
 
-* Biogas Machines
+* **Biogas Machines** (biogasmachines)
 
   Expands Tubelib (and TechPack) with various machines that use Biogas either as a product
-  or a power source.  Work in progress!
+  or a power source.  *Work in progress!*
 
   Available:
 
-  - Water Freezer - metal box to freeze water to ice using Biogas as coolant; water can
-    be supplied in buckets or (if pipeworks are installed) through pipes; one water bucket
-    is converted to one ice cube, in case of pipes there is no need for any containers but
-    water should be reaching device via pipelines; empty buckets are returned as secondary
-    products so Freezer can be easily paired with Liquid Sampler and other Tubelib machinery
+  - Water Freezer - freezing machine that converts water to ice using Biogas as coolant; water
+    can be supplied in buckets or (if pipeworks mod is installed) through pipes; one water bucket
+    is converted to one ice cube; in case of pipe network there is no need for any containers
+    however fresh water should be provided via pipelines; empty buckets are returned as secondary
+    products so Freezer can be easily paired with Liquid Sampler and other Tubelib machinery;
+    punch node to see status
 
   Planned:
 

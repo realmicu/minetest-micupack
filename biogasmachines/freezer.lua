@@ -21,15 +21,16 @@
 	CPU resources for inactive machine (timer is stopped).
 
 	Operational info:
-	* machine first checks for buckets with water, if there are none
-	  then tries to take water from pipes
+	* machine checks for buckets with water first and if there are none
+	  tries to take water from pipeline
 	* when fuel ends, machine switches off automatically and has to
-	  be powered on by player after loading Biogas
+	  be powered on again manually after refilling Biogas
 	* if there is nothing to freeze, machine enters standby mode; it
 	  will automatically pick up work as soon as any water source becomes
 	  available again
 	* there is 1 tick gap between items to unload ice and load internal
-	  water tank or freezing tray
+	  water tank or freezing tray; this a design choice to make timer
+	  callback run faster
 	* Biogas is used only when device actually freezes
 	* partially frozen items (due to work being interrupted by on/off
 	  switch) have to be frozen again from beginning, Biogas used for
