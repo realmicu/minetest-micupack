@@ -75,6 +75,17 @@ local water_buckets = { "bucket:bucket_water", "bucket:bucket_river_water" }
 	Formspec
 	--------
 ]]--
+-- static data for formspec
+local fmxy = {
+	inv_h = tostring(INV_H),
+        inv_in_w = tostring(INV_IN_W),
+        mid_x = tostring(INV_IN_W + 1),
+        inv_out_w = tostring(INV_OUT_W),
+        inv_out_x = tostring(INV_IN_W + 2),
+	biogas_time = tostring(BIOGAS_TIME_SEC * TIMER_TICK_SEC),
+	ice_time = tostring(ICE_TIME_SEC * TIMER_TICK_SEC),
+	ice_qty = tostring(BIOGAS_TIME_SEC / ICE_TIME_SEC)
+}
 
 -- Parameters:
 -- state - tubelib state
@@ -83,43 +94,39 @@ local water_buckets = { "bucket:bucket_water", "bucket:bucket_river_water" }
 -- item_percent - ice completion
 -- show_icons - show image hints (bool)
 local function formspec(state, water_pipe, fuel_percent, item_percent, show_icons)
-	local h = tostring(INV_H)
-	local wi = tostring(INV_IN_W)
-	local wo = tostring(INV_OUT_W)
-	local pr = tostring(INV_IN_W + 1)
-	local po = tostring(INV_IN_W + 2)
 	return "size[8,8.25]" ..
 	default.gui_bg ..
 	default.gui_bg_img ..
 	default.gui_slots ..
-	"list[context;src;0,0;" .. wi .. "," .. h .. ";]" ..
+	"list[context;src;0,0;" .. fmxy.inv_in_w .. "," .. fmxy.inv_h .. ";]" ..
 	(show_icons and "item_image[0,0;1,1;bucket:bucket_water]" or "") ..
-	"list[context;cur;" .. wi .. ",0;1,1;]" ..
-	"image[" .. pr .. ",0;1,1;biogasmachines_freezer_pipe_inv_" ..
+	"list[context;cur;" .. fmxy.inv_in_w .. ",0;1,1;]" ..
+	"image[" .. fmxy.mid_x .. ",0;1,1;biogasmachines_freezer_pipe_inv_" ..
 		(water_pipe and "fg" or "bg") .. ".png]" ..
-	"image[" .. wi ..
+	"image[" .. fmxy.inv_in_w ..
 		",1;1,1;biogasmachines_freezer_inv_bg.png^[lowpart:" ..
 		tostring(fuel_percent) ..
 		":biogasmachines_freezer_inv_fg.png]" ..
-	"image[" .. pr .. ",1;1,1;gui_furnace_arrow_bg.png^[lowpart:" ..
+	"image[" .. fmxy.mid_x .. ",1;1,1;gui_furnace_arrow_bg.png^[lowpart:" ..
 		tostring(item_percent) ..
 		":gui_furnace_arrow_fg.png^[transformR270]" ..
-	"list[context;fuel;" .. wi .. ",2;1,1;]" ..
-	(show_icons and "item_image[" .. wi ..
+	"list[context;fuel;" .. fmxy.inv_in_w .. ",2;1,1;]" ..
+	(show_icons and "item_image[" .. fmxy.inv_in_w ..
 		",2;1,1;tubelib_addons1:biogas]" or "") ..
-	"image_button[" .. pr .. ",2;1,1;" .. tubelib.state_button(state) ..
-		";button;]" ..
+	"image_button[" .. fmxy.mid_x .. ",2;1,1;" ..
+		tubelib.state_button(state) .. ";button;]" ..
 	"item_image[1,3.25;0.5,0.5;tubelib_addons1:biogas]" ..
-	"label[1.5,3.25;= " .. tostring(BIOGAS_TIME_SEC) .. " sec]" ..
+	"label[1.5,3.25;= " .. fmxy.biogas_time .. " sec]" ..
 	"item_image[3,3.25;0.5,0.5;default:ice]" ..
-	"label[3.5,3.25;= " .. tostring(ICE_TIME_SEC) .. " sec]" ..
+	"label[3.5,3.25;= " .. fmxy.ice_time .. " sec]" ..
 	"item_image[5.25,3.25;0.5,0.5;tubelib_addons1:biogas]" ..
 	"image[5.75,3.25;0.5,0.5;tubelib_gui_arrow.png^[resize:16x16]" ..
 	"item_image[6.25,3.25;0.5,0.5;default:ice]" ..
-	"label[6.75,3.25;x " .. tostring(BIOGAS_TIME_SEC / ICE_TIME_SEC) ..
-		"]" ..
-	(show_icons and "item_image[" .. po .. ",0;1,1;default:ice]" or "") ..
-	"list[context;dst;" .. po .. ",0;" .. wo .. "," .. h .. ";]" ..
+	"label[6.75,3.25;x " .. fmxy.ice_qty .. "]" ..
+	(show_icons and "item_image[" .. fmxy.inv_out_x ..
+		",0;1,1;default:ice]" or "") ..
+	"list[context;dst;" .. fmxy.inv_out_x .. ",0;" .. fmxy.inv_out_w ..
+		"," .. fmxy.inv_h .. ";]" ..
 	"list[current_player;main;0,4;8,1;]" ..
 	"list[current_player;main;0,5.25;8,3;8]" ..
 	"listring[context;dst]" ..
