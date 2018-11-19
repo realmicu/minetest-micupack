@@ -100,6 +100,9 @@ local function formspec(state, water_pipe, fuel_percent, item_percent, show_icon
 	default.gui_slots ..
 	"list[context;src;0,0;" .. fmxy.inv_in_w .. "," .. fmxy.inv_h .. ";]" ..
 	(show_icons and "item_image[0,0;1,1;bucket:bucket_water]" or "") ..
+	"box[" .. fmxy.inv_in_w .. ",0;0.82,0.9;" ..
+	((state == tubelib.RUNNING and not water_pipe)
+		and "#2F4FBF]" or "#1F3F9F]") ..
 	"list[context;cur;" .. fmxy.inv_in_w .. ",0;1,1;]" ..
 	"image[" .. fmxy.mid_x .. ",0;1,1;biogasmachines_freezer_pipe_inv_" ..
 		(water_pipe and "fg" or "bg") .. ".png]" ..
