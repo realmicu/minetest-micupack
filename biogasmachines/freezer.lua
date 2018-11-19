@@ -325,7 +325,6 @@ local function on_receive_fields(pos, formname, fields, player)
 	end
 	local node = minetest.get_node(pos)
 	local meta = minetest.get_meta(pos)
-	local number = meta:get_string("number")
 	local running = meta:get_int("running")
 	local label = minetest.registered_nodes[node.name].description
 	if fields and fields.button then
