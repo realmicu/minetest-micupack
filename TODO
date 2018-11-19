@@ -8,10 +8,7 @@ moderntables:
 	* add table with storage (2x8)
 
 biogasmachines:
-	* Coal Gasifier - convert coal block to Biogas stack, do not use Biogas
-	  ("electric") as it would create split loop complications in automated
-	  processing; leftover is gravel? dirt? none?
-	* Biogas Smelter - furnace powered by Biogas
+	* Gas Furnace - furnace powered by Biogas
 	* High-Temp Compressor - heat up cobblestone using Biogas and change it
 	  (slowly and with lot of energy) to obsidian; also compress coal block
 	  to diamond using the same technique; make other combinations possible
