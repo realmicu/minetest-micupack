@@ -20,5 +20,5 @@ dofile(minetest.get_modpath("biogasmachines").."/functions.lua")
 -- machines
 dofile(minetest.get_modpath("biogasmachines").."/freezer.lua")
 dofile(minetest.get_modpath("biogasmachines").."/gasifier.lua")
-dofile(minetest.get_modpath("biogasmachines").."/gasfurnace.lua")
-dofile(minetest.get_modpath("biogasmachines").."/htcompressor.lua")
+--dofile(minetest.get_modpath("biogasmachines").."/gasfurnace.lua")
+--dofile(minetest.get_modpath("biogasmachines").."/htcompressor.lua")
