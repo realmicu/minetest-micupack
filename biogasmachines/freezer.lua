@@ -35,8 +35,9 @@
 	* partially frozen items (due to work being interrupted by on/off
 	  switch) have to be frozen again from beginning, Biogas used for
 	  such partial freeze is not recoverable
-	* bucket freezing tray cannot be emptied manually, it becomes empty
-	  only when device finishes converting water to ice
+	* bucket freezing tray cannot be emptied manually when machine is
+	  running, stop the device to take water bucket; please note that
+	  tray cannot be loaded manually, please use input inventory
 	* when using pipes, internal water tank is filled completely before
 	  process starts; shutting down water source during freezing does
 	  not stop it
@@ -100,9 +101,6 @@ local function formspec(state, water_pipe, fuel_percent, item_percent, show_icon
 	default.gui_slots ..
 	"list[context;src;0,0;" .. fmxy.inv_in_w .. "," .. fmxy.inv_h .. ";]" ..
 	(show_icons and "item_image[0,0;1,1;bucket:bucket_water]" or "") ..
-	"box[" .. fmxy.inv_in_w .. ",0;0.82,0.9;" ..
-	((state == tubelib.RUNNING and not water_pipe)
-		and "#2F4FBF]" or "#1F3F9F]") ..
 	"list[context;cur;" .. fmxy.inv_in_w .. ",0;1,1;]" ..
 	"image[" .. fmxy.mid_x .. ",0;1,1;biogasmachines_freezer_pipe_inv_" ..
 		(water_pipe and "fg" or "bg") .. ".png]" ..
@@ -138,6 +136,9 @@ local function formspec(state, water_pipe, fuel_percent, item_percent, show_icon
 	"listring[current_player;main]" ..
 	"listring[context;fuel]" ..
 	"listring[current_player;main]" ..
+	(state == tubelib.RUNNING and not water_pipe and
+                "box[" .. fmxy.inv_in_w .. ",0;0.82,0.9;#2F4FBF]" or
+                "listring[context;cur]listring[current_player;main]") ..
 	default.get_hotbar_bg(0, 4)
 end
 
@@ -169,9 +170,7 @@ local function freezer_start(pos)
 	local number = meta:get_string("number")
 	local fuel = meta:get_int("fuel_ticks")
 	local label = minetest.registered_nodes[node.name].description
-	if meta:get_int("source") == SOURCE_PIPE then
-		meta:set_int("source", SOURCE_EMPTY)
-	end
+	meta:set_int("source", SOURCE_EMPTY)
 	meta:set_int("item_ticks", ICE_TIME_SEC)
 	meta:set_int("running", TICKS_TO_SLEEP)
 	meta:set_string("infotext", label .. " " .. number .. ": running")
@@ -189,9 +188,7 @@ local function freezer_stop(pos)
 	local number = meta:get_string("number")
 	local fuel = meta:get_int("fuel_ticks")
 	local label = minetest.registered_nodes[node.name].description
-	if meta:get_int("source") == SOURCE_PIPE then
-		meta:set_int("source", SOURCE_EMPTY)
-	end
+	meta:set_int("source", SOURCE_EMPTY)
 	meta:set_int("item_ticks", ICE_TIME_SEC)
 	meta:set_int("running", tubelib.STATE_STOPPED)
 	meta:set_string("infotext", label .. " " .. number .. ": stopped")
@@ -226,9 +223,7 @@ local function freezer_fault(pos)
 	local number = meta:get_string("number")
 	local fuel = meta:get_int("fuel_ticks")
 	local label = minetest.registered_nodes[node.name].description
-	if meta:get_int("source") == SOURCE_PIPE then
-		meta:set_int("source", SOURCE_EMPTY)
-	end
+	meta:set_int("source", SOURCE_EMPTY)
 	meta:set_int("item_ticks", ICE_TIME_SEC)
 	meta:set_int("running", tubelib.STATE_FAULT)
 	meta:set_string("infotext", label .. " " .. number .. ": fault")
@@ -299,7 +294,10 @@ local function allow_metadata_inventory_take(pos, listname, index, stack, player
 		return 0
 	end
 	if listname == "cur" then
-		return 0
+		local meta = minetest.get_meta(pos)
+		if meta:get_int("running") > 0 then
+			return 0
+		end
 	end
 	return stack:get_count()
 end
@@ -366,7 +364,7 @@ local function on_timer(pos, elapsed)
 		-- try to start freezing bucket or water from pipe
 		pipe = biogasmachines.is_pipe_with_water(pos, node)
 		local output = { ItemStack("default:ice 1") }
-		if not inv:is_empty("src") then
+		if not inv:is_empty("cur") or not inv:is_empty("src") then
 			-- source: water bucket
 			source = SOURCE_BUCKET
 			pipe = false
@@ -389,20 +387,22 @@ local function on_timer(pos, elapsed)
 			-- something to do, wake up and re-entry
 			return freezer_start(pos)
 		end
-		-- check if there is space in output, if not - do nothing
-		for _, stack in ipairs(output) do
-			if not inv:room_for_item("dst", stack) then
-				return true
+		if inv:is_empty("cur") then
+			-- check if there is space in output, if not - do nothing
+			for _, stack in ipairs(output) do
+				if not inv:room_for_item("dst", stack) then
+					return true
+				end
 			end
-		end
-		-- process another water unit
-		if source == SOURCE_BUCKET then
-			local inp = get_water_bucket(inv, "src")
-			if inp:is_empty() then
-				-- oops
-				return freezer_fault(pos)
+			-- process another water unit
+			if source == SOURCE_BUCKET then
+				local inp = get_water_bucket(inv, "src")
+				if inp:is_empty() then
+					-- oops
+					return freezer_fault(pos)
+				end
+				inv:add_item("cur", inp)
 			end
-			inv:add_item("cur", inp)
 		end
 		meta:set_int("source", source)
 		itemcnt = ICE_TIME_SEC
