@@ -416,27 +416,37 @@ local function on_timer(pos, elapsed)
 		end
 		-- choose item
 		local inputname = nil
-		for i, r in pairs(biogas_recipes) do
-			if inv:contains_item("src", ItemStack(i .. " 1")) and
-			   inv:room_for_item("dst",
-				ItemStack("tubelib_addons1:biogas " ..
-				tostring(r.count))) and
-			   (not r.extra or inv:room_for_item("dst", r.extra))
-			   then
-				inputname = i
-				prodtime = r.time
-				break
+		if not inv:is_empty("cur") then
+			-- leftover item, start from beginning
+			local inp = inv:get_stack("cur", 1)
+			inputname = inp:get_name()
+			if not biogas_recipes[inputname] then
+				return gasifier_fault(pos)	-- oops
 			end
+			prodtime = biogas_recipes[inputname].time
+		else
+			-- prepare item, next tick will start processing
+			for i, r in pairs(biogas_recipes) do
+				if inv:contains_item("src", ItemStack(i .. " 1")) and
+				   inv:room_for_item("dst",
+					ItemStack("tubelib_addons1:biogas " ..
+					tostring(r.count))) and
+				   (not r.extra or inv:room_for_item("dst", r.extra))
+				   then
+					inputname = i
+					prodtime = r.time
+					break
+				end
+			end
+			if not inputname then
+				return true
+			end
+			local inp = inv:remove_item("src", ItemStack(inputname .. " 1"))
+			if inp:is_empty() then
+				return gasifier_fault(pos)	-- oops
+			end
+			inv:add_item("cur", inp)
 		end
-		if not inputname then
-			return true
-		end
-		-- move item to working tray, next tick will start processing
-		local inp = inv:remove_item("src", ItemStack(inputname .. " 1"))
-		if inp:is_empty() then
-			return gasifier_fault(pos)	-- oops
-		end
-		inv:add_item("cur", inp)
 		meta:set_string("item_name", inputname)
 		itemcnt = prodtime
 	else
