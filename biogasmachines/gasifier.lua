@@ -172,11 +172,11 @@ local function formspec(state, item_percent, recipe_idx, show_icons)
 	"list[current_player;main;0,5.25;8,3;8]" ..
 	"listring[context;dst]" ..
 	"listring[current_player;main]" ..
+	"listring[context;src]" ..
+	"listring[current_player;main]" ..
 	(state == tubelib.RUNNING and
 		"box[" .. fmxy.mid_x .. ",0;0.82,0.9;#9F3F1F]" or
 		"listring[context;cur]listring[current_player;main]") ..
-	"listring[context;src]" ..
-	"listring[current_player;main]" ..
 	default.get_hotbar_bg(0, 4)
 end
 
