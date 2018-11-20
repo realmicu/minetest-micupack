@@ -15,6 +15,8 @@
 	
 ]]--
 
+-- Coal block burn time is 370, our Gasifier produces 8 Biogas units from it,
+-- so let 1 Biogas burn for 45 sec (8 * 45 = 360)
 
 minetest.register_node("biogasmachines:gasfurnace", {
 	description = "Tubelib Biogas Furnace",

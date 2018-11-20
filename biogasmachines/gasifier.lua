@@ -661,7 +661,7 @@ biogasmachines.add_gasifier_recipe({
 
 biogasmachines.add_gasifier_recipe({
 	input = "farming:straw",
-	count = 3,
+	count = 2,
 	time = 8,
 })
 
