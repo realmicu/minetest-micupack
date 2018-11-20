@@ -124,7 +124,7 @@ local function formspec_recipe_hint_bar(recipe_idx)
 	return "label[0.5,3.25;Recipe]" ..
 	"image_button[1.5,3.3;0.5,0.5;;left;<]" ..
 	"label[2,3.25;" ..
-		string.format("%3d / %3d", recipe_idx, #biogas_sources) ..
+		string.format("%2d / %2d", recipe_idx, #biogas_sources) ..
 		"]" ..
 	"image_button[2.8,3.3;0.5,0.5;;right;>]" ..
 	"item_image[3.6,3.25;0.5,0.5;" .. input_item .. "]" ..
@@ -656,7 +656,7 @@ biogasmachines.add_gasifier_recipe({
 	input = "default:coalblock",
 	count = 8,
 	time = 12,
-	extra = "tubelib_addons1:biofuel 1",
+	extra = "default:gravel 1",
 })
 
 biogasmachines.add_gasifier_recipe({

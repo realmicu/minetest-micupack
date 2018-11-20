@@ -71,20 +71,22 @@ This modpack contains:
   Available:
 
   - **Water Freezer**
-    Freezing machine that converts water to ice using Biogas as coolant; water
-    can be supplied in buckets or (if pipeworks mod is installed) through pipes; one water bucket
-    is converted to one ice cube; in case of pipe network there is no need for any containers
-    however fresh water should be provided via pipelines; empty buckets are returned as secondary
-    products so Freezer can be easily paired with Liquid Sampler and other Tubelib machinery;
+
+    Freezing machine that converts water to ice using Biogas as coolant; water can be supplied
+    in buckets or (if pipeworks mod is installed) through pipes; one water bucket is converted
+    to one ice cube; in case of pipe network there is no need for any containers however fresh
+    water should be provided via pipelines; empty buckets are returned as secondary products
+    so Freezer can be easily paired with Liquid Sampler and other Tubelib machinery;
     punch node to see status
+
   - **Gasifier**
+
     Machine to extract Biogas from compressed dry organic material, such as fossil
     fuels; designed primarily to retrieve gas from Coal blocks (not lumps!), allows also to 
     convert Straw blocks to Biogas units; equipped with 'recipe hint bar' that shows processing
-    ingredients, products and time; primary goal is to convert piles of Coal blocks to another
-    burnable agent, but ecological and flexible; more recipes can be added via simple API
-    function; machine supports one secondary (leftover) product per recipe (in case of Coal
-    gasification it is an extra unit of Biofuel); as usual, punch node for quick status check
+    ingredients, products and duration; primary goal is to convert piles of Coal blocks to another
+    burnable agent, better suited for use in modern machinery; more recipes can be added via
+    simple API function; as usual, punch node for quick status check
 
   Planned:
 
