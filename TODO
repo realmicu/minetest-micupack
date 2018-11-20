@@ -9,9 +9,14 @@ moderntables:
 
 biogasmachines:
 	* Gas Furnace - furnace powered by Biogas
-	* High-Temp Compressor - heat up cobblestone using Biogas and change it
-	  (slowly and with lot of energy) to obsidian; also compress coal block
-	  to diamond using the same technique; make other combinations possible
-	  through custom recipe registration; allow quicker work by providing
-	  cooling water via pipeworks
+	* High-Temp Compressor - heat up cobblestone or compressed gravel
+	  using Biogas and change it (slowly and with lot of energy) to obsidian;
+	  also compress coal block to diamond using the same technique; make other
+	  combinations possible through custom recipe registration; requires cooling
+	  water - in buckets, via pipeworks or frozen into ice cubes
+	* Metal Recycler - retrieve metal ingots and Mese shards from all items
+	  and nodes that were crafted from these resources; device will return
+	  random number of such items between 1 and craft quantity; Mese crystals
+	  will be converted to shards for calculation purposes; Biogas will be
+	  moderately used
 
