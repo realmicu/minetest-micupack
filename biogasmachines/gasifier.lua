@@ -452,19 +452,19 @@ local function on_timer(pos, elapsed)
 	else
 		-- production tick
 		itemcnt = itemcnt - 1
+		local recipe = biogas_recipes[itemname]
 		if itemcnt == 0 then
 			inv:add_item("dst",
 				ItemStack("tubelib_addons1:biogas " ..
-				tostring(biogas_recipes[itemname].count)))
-			if biogas_recipes[itemname].extra then
-				inv:add_item("dst",
-					biogas_recipes[itemname].extra)
+				tostring(recipe.count)))
+			if recipe.extra then
+				inv:add_item("dst", recipe.extra)
 			end
 			inv:set_stack("cur", 1, ItemStack({}))
 			meta:set_string("item_name", "")
 			itemcnt = -1
 		else
-			prodtime = biogas_recipes[itemname].time
+			prodtime = recipe.time
 		end
 	end
 	meta:set_int("item_ticks", itemcnt)
@@ -654,7 +654,7 @@ minetest.register_craft({
 
 biogasmachines.add_gasifier_recipe({
 	input = "default:coalblock",
-	count = 8,
+	count = 9,
 	time = 12,
 	extra = "default:gravel 1",
 })
