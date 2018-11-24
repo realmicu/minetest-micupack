@@ -283,6 +283,10 @@ end
 -- validate items move
 local function allow_metadata_inventory_move(pos, from_list, from_index, to_list, to_index, count, player)
 	local meta = minetest.get_meta(pos)
+	if to_list == "cur" or
+	   (from_list == "cur" and meta:get_int("running") > 0) then
+                return 0
+        end
 	local inv = meta:get_inventory()
 	local stack = inv:get_stack(from_list, from_index)
 	return allow_metadata_inventory_put(pos, to_list, to_index, stack, player)
