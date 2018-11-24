@@ -100,7 +100,6 @@ This modpack contains:
     - uncookable items stay in input tray and are not routed anywhere
     - device tries its best to fill output tray and can choose input items to effectively utilize
       remaining space there
-    Punch node for quick status check.
 
   Planned:
 
