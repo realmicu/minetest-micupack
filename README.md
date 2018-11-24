@@ -72,26 +72,38 @@ This modpack contains:
 
   - **Water Freezer**
 
-    Freezing machine that converts water to ice using Biogas as coolant; water can be supplied
-    in buckets or (if pipeworks mod is installed) through pipes; one water bucket is converted
-    to one ice cube; in case of pipe network there is no need for any containers however fresh
-    water should be provided via pipelines; empty buckets are returned as secondary products
-    so Freezer can be easily paired with Liquid Sampler and other Tubelib machinery;
-    punch node to see status
+    Freezing machine that converts water to ice using Biogas as coolant. Water can be supplied
+    in buckets or (if pipeworks mod is installed) through pipes. One water bucket is converted
+    to one ice cube, in case of pipe network there is no need for any vessels however fresh
+    water should be provided via pipelines. Empty buckets are returned as secondary products
+    so Freezer can be easily paired with Liquid Sampler and other Tubelib machinery.
+    Punch node to see status.
 
   - **Gasifier**
 
-    Machine to extract Biogas from compressed dry organic material, such as fossil
-    fuels; designed primarily to retrieve gas from Coal blocks (not lumps!), allows also to 
-    convert Straw blocks to Biogas units; equipped with 'recipe hint bar' that shows processing
-    ingredients, products and duration; primary goal is to convert piles of Coal blocks to another
-    burnable agent, better suited for use in modern machinery; more recipes can be added via
-    simple API function; as usual, punch node for quick status check
+    Machine to extract Biogas from compressed dry organic material, such as fossil fuels.
+    Designed primarily to retrieve gas from Coal blocks (not lumps!), it allows to convert
+    Straw blocks to Biogas units as well. Equipped with 'recipe hint bar' that shows processing
+    ingredients, products and duration. Primary goal is to convert piles of Coal blocks to another
+    burnable agent, better suited for use in modern machinery.
+    More recipes can be added via simple API function (see source file).
+    As usual, punch node for quick status check.
+
+  - **Biogas Furnace**
+
+    Biogas-fuelled, Tubelib-compatible version of standard furnace. All cooking recipes apply.
+    Notable differences are:
+    - fuel is used only when cooking (Biogas is not wasted)
+    - both input and output trays are larger allowing more items to be stored and processed
+    - items that leave containers after cooking (for example farming:salt) do not block cooking
+      tray; such vessels (buckets etc) are routed to output tray as well
+    - uncookable items stay in input tray and are not routed anywhere
+    - device tries its best to fill output tray and can choose input items to effectively utilize
+      remaining space there
+    Punch node for quick status check.
 
   Planned:
 
-  - Biogas Furnace - modern furnace powered by Biogas instead of coal or wood; it will accept
-    all recipes from original furnace
   - High Temperature Compressor - advanced machine to convert (albeit slowly) stone (or compressed
     gravel) to obsidian and coal block to diamonds; it will require water supplied either via buckets,
     through pipes (like freezer) or ice cubes(!) and a decent amount of Biogas
