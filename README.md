@@ -1,8 +1,15 @@
-# MicuPack v0.4
+# MicuPack v0.7
 
-**Minetest modpack by (real)micu, tested with Minetest 0.4.17.1 and Minetest Game**
+**Minetest modpack by (real)micu, tested with Minetest 0.4.17.1 running Minetest Game**
 
-This modpack contains:
+### Installation:
+
+Enter Minetest mod directory and run:
+'''
+git clone https://github.com/realmicu/minetest-micupack.git micupack
+'''
+
+### This modpack contains:
 
 * **Modern Tables** (moderntables)
 
@@ -66,7 +73,7 @@ This modpack contains:
 * **Biogas Machines** (biogasmachines)
 
   Expands Tubelib (and TechPack) with various machines that use Biogas either as a product
-  or a power source.  *Work in progress!*
+  or a power source.  *To be expanded*
 
   Available:
 
