@@ -5,9 +5,9 @@
 ### Installation:
 
 Enter Minetest mod directory and run:
-'''
+```
 git clone https://github.com/realmicu/minetest-micupack.git micupack
-'''
+```
 
 ### This modpack contains:
 
