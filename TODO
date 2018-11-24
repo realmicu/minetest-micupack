@@ -8,6 +8,7 @@ moderntables:
 	* add table with storage (2x8)
 
 biogasmachines:
+	* implement inventory move logic from Gasfurnace back to Freezer and Gasifier
 	* Gas Furnace - furnace powered by Biogas
 	* High-Temp Compressor - heat up cobblestone or compressed gravel
 	  using Biogas and change it (slowly and with lot of energy) to obsidian;
