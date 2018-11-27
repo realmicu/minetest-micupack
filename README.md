@@ -1,4 +1,4 @@
-# MicuPack v0.7
+# MicuPack v0.8
 
 **Minetest modpack by (real)micu, tested with Minetest 0.4.17.1 running Minetest Game**
 
@@ -76,7 +76,7 @@ git clone https://github.com/realmicu/minetest-micupack.git micupack
 * **Biogas Machines** (biogasmachines)
 
   Expands Tubelib (and TechPack) with various machines that use Biogas either as a product
-  or a power source.  *To be expanded*
+  or a power source.  *To be expanded.*
 
   Available:
 
