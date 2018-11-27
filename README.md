@@ -13,7 +13,10 @@ git clone https://github.com/realmicu/minetest-micupack.git micupack
 
 * **Modern Tables** (moderntables)
 
-  Simple wooden tables. *To be expanded.*
+  Full height wooden and metal tables in two variants: simple and with storage drawer
+  (inventory for 16 items). If Tubelib mod is installed, four-legged machine stand
+  and 4 more tables (designed to match both plain Tubelib and BiogasMachines style)
+  are added as well.
 
 
 * **Miner Tools** (minertools)
@@ -117,5 +120,5 @@ git clone https://github.com/realmicu/minetest-micupack.git micupack
     and nodes that were crafted from these resources; device will return random number of ingots
     and shards - between 1 and craft quantity; Mese crystals will be converted to shards for
     calculation purposes; fuelled by moderate volume of Biogas
-  - Portable Biogas Torch - a tool to melt down ice and produce water source from it
+  - Portable Biogas Torch (optional, TBD) - a tool to melt down ice and produce water source from it
 
