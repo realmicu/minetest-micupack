@@ -113,6 +113,8 @@ git clone https://github.com/realmicu/minetest-micupack.git micupack
 
   Planned:
 
+  - Gas Jet Furnace - Gas Furnace that is 2 times faster than standard version in both item cooking
+    and Biogas consumption (but does not use more game resources at all; timer tick is still 1 sec)
   - High Temperature Compressor - advanced machine to convert (albeit slowly) stone (or compressed
     gravel) to obsidian and coal block to diamonds; it will require water supplied either via buckets,
     through pipes (like freezer) or ice cubes(!) and a decent amount of Biogas
