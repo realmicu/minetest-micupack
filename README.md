@@ -116,9 +116,3 @@ git clone https://github.com/realmicu/minetest-micupack.git micupack
   - High Temperature Compressor - advanced machine to convert (albeit slowly) stone (or compressed
     gravel) to obsidian and coal block to diamonds; it will require water supplied either via buckets,
     through pipes (like freezer) or ice cubes(!) and a decent amount of Biogas
-  - Metal Recycler - decomposing device to retrieve metal ingots and Mese shards from all items
-    and nodes that were crafted from these resources; device will return random number of ingots
-    and shards - between 1 and craft quantity; Mese crystals will be converted to shards for
-    calculation purposes; fuelled by moderate volume of Biogas
-  - Portable Biogas Torch (optional, TBD) - a tool to melt down ice and produce water source from it
-
