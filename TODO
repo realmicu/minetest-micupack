@@ -1,16 +1,15 @@
 
-slprogtools:
-	* consider custom naming of copier dongle the same way book gets titled
-	  so device can be stored and treated as archive copies for software
-
 biogasmachines:
-	* Gas Jet Furnace - Gas Furnace that is 2 times faster than standard version
-	  in both item cooking and Biogas consumption
 	* High-Temp Compressor - heat up cobblestone or compressed gravel
 	  using Biogas and change it (slowly and with lot of energy) to obsidian;
 	  also compress coal block to diamond using the same technique; make other
 	  combinations possible through custom recipe registration; requires cooling
 	  water - in buckets, via pipeworks or ice cubes
+
+slprogtools:
+	* consider custom naming of copier dongle the same way book gets titled
+	  so device can be stored and treated as archive copies for software
+
 
 future plans:
 	* Tubelib Chest Indicator - small attachable plate that indicates fill level
