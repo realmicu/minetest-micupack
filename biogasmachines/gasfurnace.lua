@@ -198,14 +198,18 @@ local function gasfurnace_fault(pos)
 	return false
 end
 
-local function countdown_to_idle(pos)
+local function countdown_to_idle_or_stop(pos, stop)
 	local meta = minetest.get_meta(pos)
 	local running = meta:get_int("running")
 	if running > 0 then
 		running = running - 1
 		meta:set_int("running", running)
 		if running == 0 then
-			return gasfurnace_idle(pos)
+			if stop then
+				return gasfurnace_stop(pos)
+			else
+				return gasfurnace_idle(pos)
+			end
 		end
 	end
 	return true
@@ -357,15 +361,15 @@ local function on_timer(pos, elapsed)
 	local itemcnt = meta:get_int("item_ticks")
 	local fuel = meta:get_int("fuel_ticks")
 	if fuel == 0 and inv:is_empty("fuel") then
-		-- no fuel - no work
-		return gasfurnace_stop(pos)
+		-- no fuel - no work (but wait a little)
+		return countdown_to_idle_or_stop(pos, true)
 	end
 	local recipe = {}
 	local inp
 	if inv:is_empty("cur")  then
 		-- idle and ready, check for something to work with
 		if inv:is_empty("src") then
-			return countdown_to_idle(pos)
+			return countdown_to_idle_or_stop(pos)
 		end
 		-- find item to cook/smelt that fits output tray
 		-- (parse list items as first choice is not always the best one)
@@ -390,7 +394,7 @@ local function on_timer(pos, elapsed)
 		-- (idx == -1 - cookable item in src but no space in dst)
 		if idx < 0 then
 			if idx < -1 then
-				return countdown_to_idle(pos)
+				return countdown_to_idle_or_stop(pos)
 			end
 			return true
 		end
