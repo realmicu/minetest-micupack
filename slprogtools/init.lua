@@ -150,37 +150,40 @@ local function formspec_copier(tool, tubelib_id)
 	-- function requires all metadata to be accessible
 	-- (or initialized elsewhere)
 	local tool_def = tool:get_definition()
-	local label = tool_def.description
+	local desc = tool_def.description
 	local tool_meta = tool:get_meta()
 	local init_flag = tool_meta:get_int("init_flag") ~= 0
 	local loop_flag = tool_meta:get_int("loop_flag") ~= 0
 	local note_flag = tool_meta:get_int("note_flag") ~= 0
 	local ro_flag = tool_meta:get_int("ro_flag") ~= 0
+	local label = tool_meta:get_string("description") or ""
 	local init_len = string.len(tool_meta:get_string("init_code"))
 	local loop_len = string.len(tool_meta:get_string("loop_code"))
 	local note_len = string.len(tool_meta:get_string("note_text"))
-	return "size[7,4,true]"..
+	return "size[7,4.75,true]"..
 	"position[0.5,0.25]" ..
 	"no_prepend[]" ..
-	"label[1.5,0;" .. minetest.colorize("#FFFF00", label) .. "]" ..
-	"label[0.5,1;" ..
+	"label[1.5,0;" .. minetest.colorize("#FFFF00", desc) .. "]" ..
+	"field[0.75,1.25;4.5,0.5;text_label;;" .. label .. "]" ..
+	"label[0.5,1.75;" ..
 		minetest.colorize("#00FFFF",
 		"Connected to controller " .. tubelib_id) .. "]" ..
-	"checkbox[0.5,1.5;init_flag;include " .. msg_M .. "init()" .. msg_W ..
+	"checkbox[0.5,2.25;init_flag;include " .. msg_M .. "init()" .. msg_W ..
 		" code (size: " .. tostring(init_len) .. ");" ..
 		tostring(init_flag) .. "]" ..
-	"checkbox[0.5,2;loop_flag;include " .. msg_M .. "loop()" .. msg_W ..
+	"checkbox[0.5,2.75;loop_flag;include " .. msg_M .. "loop()" .. msg_W ..
 		" code (size: " .. tostring(loop_len) .. ");" ..
 		tostring(loop_flag) .. "]" ..
-	"checkbox[0.5,2.5;note_flag;include " .. msg_M .. "notes" .. msg_W ..
+	"checkbox[0.5,3.25;note_flag;include " .. msg_M .. "notes" .. msg_W ..
 		" text (size: " .. tostring(note_len) .. ");" ..
 		tostring(note_flag) .. "]" ..
-	"checkbox[0.5,3;ro_flag;read only (archive mode);" ..
+	"checkbox[0.5,3.75;ro_flag;read only (archive mode);" ..
 		tostring(ro_flag) .. "]" ..
-	"button_exit[5,0.75;1.5,1;clear;Clear]" ..
-	"button_exit[5,1.5;1.5,1;download;Download]" ..
-	"button_exit[5,2.25;1.5,1;upload;Upload]" ..
-	"button_exit[5,3;1.5,1;exit;Exit]"
+	"button_exit[5,0.75;1.5,1;label;Label]" ..
+	"button_exit[5,1.5;1.5,1;clear;Clear]" ..
+	"button_exit[5,2.25;1.5,1;download;Download]" ..
+	"button_exit[5,3;1.5,1;upload;Upload]" ..
+	"button_exit[5,3.75;1.5,1;exit;Exit]"
 end
 
 local function formspec_programmer_info(tool, slc_meta)
@@ -409,6 +412,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 	end
 	if fields.clear or fields.download or fields.upload
 		or fields.erase or fields.rewrite
+		or fields.label or fields.key_enter_field
 		or fields.exit or fields.quit then
 		play_snd = false
 	end
@@ -628,6 +632,16 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 				return true
 			end
 		end
+	elseif fields.label or fields.key_enter_field == "text_label" then
+		-- copier label
+		local new_txtlbl = fields.text_label:trim()
+		tool_meta:set_string("description", new_txtlbl)
+		play_beep_ok(player_name)
+		minetest.chat_send_player(player_name,
+			msg_Y .. "[" .. label .. "] " ..
+			msg_W .. "Text label " ..
+			(new_txtlbl == "" and "reset" or "set"))
+		tool_upd = true
 	elseif fields.exit or fields.quit then
 		play_click(player_name)
 	end

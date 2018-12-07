@@ -1,4 +1,4 @@
-# MicuPack v0.9
+# MicuPack v0.92
 
 **Minetest modpack by (real)micu, tested with Minetest 0.4.17.1 running Minetest Game**
 
@@ -40,7 +40,7 @@ git clone https://github.com/realmicu/minetest-micupack.git micupack
   Devices for interacting with SaferLua Controller from TechPack mod:
 
   - Memory Copier - portable dongle to transfer code between SL Controllers in much simpler
-    and faster way than copying it with text books; can be write-protected
+    and faster way than copying it with text books; can be write-protected and labelled
   - Memory Programmer - improved Memory Copier, with read/write protection to prevent
     accidental memory loss and code injection functionality (works like original Programmer
     but for SL Controllers); it allows to replace special marker in init() section

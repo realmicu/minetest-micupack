@@ -6,10 +6,6 @@ biogasmachines:
 	  combinations possible through custom recipe registration; requires cooling
 	  water - in buckets, via pipeworks or ice cubes
 
-slprogtools:
-	* consider custom naming of copier dongle the same way book gets titled
-	  so device can be stored and treated as archive copies for software
-
 
 future plans:
 	* Tubelib Chest Indicator - small attachable plate that indicates fill level
