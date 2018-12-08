@@ -781,12 +781,17 @@ minetest.register_tool("slprogtools:slc_memory_programmer", {
 	--------
 ]]--
 
+local metal_comp = "default:gold_ingot"
+if minetest.get_modpath("moreores") and moreores then
+	metal_comp = "moreores:silver_ingot"
+end
+
 minetest.register_craft({
 	output = "slprogtools:slc_memory_copier",
 	type = "shaped",
 	recipe = {
 		{ "", "default:steel_ingot", "" },
-		{ "default:gold_ingot", "tubelib:wlanchip", "default:copper_ingot" },
+		{ metal_comp, "tubelib:wlanchip", "default:copper_ingot" },
 		{ "", "dye:blue", "" },
 	},
 })
