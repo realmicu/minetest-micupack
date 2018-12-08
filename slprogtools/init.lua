@@ -636,7 +636,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 		-- copier label
 		local new_txtlbl = fields.text_label:trim()
 		tool_meta:set_string("description", new_txtlbl)
-		play_beep_ok(player_name)
+		play_click(player_name)
 		minetest.chat_send_player(player_name,
 			msg_Y .. "[" .. label .. "] " ..
 			msg_W .. "Text label " ..
