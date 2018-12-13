@@ -354,7 +354,6 @@ local function on_punch(pos, node, puncher, pointed_thing)
 			 ["running"] = "#BFFFBF"
 	}
 	local state = tubelib.statestring(meta:get_int("running"))
-	local pipe = tostring(biogasmachines.is_pipe_with_water(pos, node))
 	minetest.chat_send_player(player_name,
 		minetest.colorize("#FFFF00", "[Gasifier:" ..
 		meta:get_string("number") .. "]") .. " Status is " ..
