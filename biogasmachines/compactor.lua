@@ -451,12 +451,16 @@ local function on_timer(pos, elapsed)
 		-- no fuel - no work (but wait a little)
 		return countdown_to_idle_or_stop(pos, true)
 	end
+	if inv:is_empty("cic") and inv:is_empty("ice") then
+		-- no ice - count towards standby
+		return countdown_to_idle_or_stop(pos)
+	end
 	local recipe = {}
 	local prodtime = -1
 	local ice = ItemStack("default:ice 1")
 	if inv:is_empty("cur")  then
 		-- idle and ready, check for something to work with
-		if inv:is_empty("src") or inv:is_empty("ice") then
+		if inv:is_empty("src") then
 			return countdown_to_idle_or_stop(pos)
 		end
 		-- find item to compact that fits output tray
@@ -502,14 +506,15 @@ local function on_timer(pos, elapsed)
 	else
 		-- production tick
 		if inv:is_empty("cic") then
-			if inv:is_empty("ice") then
-				return countdown_to_idle_or_stop(pos)
-			end
 			local s = inv:remove_item("ice", ice)
 			if s:is_empty() then
 				return compactor_fault(pos)	-- oops
 			end
 			inv:set_stack("cic", 1, s)
+			if running == tubelib.STATE_STANDBY then
+				-- ice available again, wake up and re-entry
+				return compactor_start(pos)
+			end
 		end
 		local s = inv:get_stack("cur", 1)
 		if s:is_empty() then
