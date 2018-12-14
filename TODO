@@ -1,8 +1,4 @@
 
-biogasmachines:
-	* Gasifier - move unified_inventory recipe registration to
-	  add_gasifier_recipe() function (like Compactor)
-
 future plans:
 	* Biogas Torch - crafted from glass, biogas and steel ingot (that gives 8)
 	  replacement for default coal torch; should use the same model and mechanics

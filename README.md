@@ -1,4 +1,4 @@
-# MicuPack v0.92
+# MicuPack v1.0rc1
 
 **Minetest modpack by (real)micu, tested with Minetest 0.4.17.1 running Minetest Game**
 
