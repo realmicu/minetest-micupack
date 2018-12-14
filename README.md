@@ -117,8 +117,14 @@ git clone https://github.com/realmicu/minetest-micupack.git micupack
     and Biogas consumption. While functionally identical to its predecessor, it supports stack
     pulling from output tray as well (can be paired with High Perf Pusher).
 
+  - **Compactor**
+
+    Heavy press with heating, compacting and cooling functions that can compress stone-like
+    resources into very dense and hard materials, like obsidian. Default recipes include
+    converting cobble and compressed gravel to obsidian, flint to obsidian shards and coal
+    blocks to diamonds. Machine consumes Biogas for heating/compacting and Ice for rapid cooling.
+    Custom recipes can be added via API function.
+
   Planned:
 
-  - High Temperature Compressor - advanced machine to convert (albeit slowly) stone (or compressed
-    gravel) to obsidian and coal block to diamonds; it will require water supplied either via buckets,
-    through pipes (like freezer) or ice cubes(!) and a decent amount of Biogas
+  - Biogas Torch - Biogas-powered replacement for standard torch (source of light)
