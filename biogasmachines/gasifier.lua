@@ -96,6 +96,13 @@ function biogasmachines.add_gasifier_recipe(biogas_recipe)
 		extra = extra_item,
 	}
 	biogas_sources[#biogas_sources + 1] = input_name
+	if minetest.get_modpath("unified_inventory") and unified_inventory then
+		unified_inventory.register_craft({
+			type = "gasifier",
+			items = { input_name .. " 1" },
+			output = "tubelib_addons1:biogas " .. tostring(count),
+		})
+	end
 	return true
 end
 
@@ -654,6 +661,17 @@ minetest.register_craft({
 	-------
 ]]--
 
+-- Unified Inventory hints
+if minetest.get_modpath("unified_inventory") and unified_inventory then
+	unified_inventory.register_craft_type("gasifier", {
+		description = "Gasifier",
+		icon = 'biogasmachines_gasifier_top.png',
+		width = 1,
+		height = 1,
+	})
+end
+
+-- default recipes
 biogasmachines.add_gasifier_recipe({
 	input = "default:coalblock",
 	count = 9,
@@ -666,20 +684,3 @@ biogasmachines.add_gasifier_recipe({
 	count = 2,
 	time = 8,
 })
-
--- Unified Inventory hints
-if minetest.get_modpath("unified_inventory") then
-	unified_inventory.register_craft_type("gasifier", {
-		description = "Gasifier",
-		icon = 'biogasmachines_gasifier_top.png',
-		width = 1,
-		height = 1,
-	})
-	for i, r in pairs(biogas_recipes) do
-		unified_inventory.register_craft({
-			type = "gasifier",
-			items = { i },
-			output = "tubelib_addons1:biogas " .. tostring(r.count),
-		})
-	end
-end
