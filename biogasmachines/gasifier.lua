@@ -121,14 +121,16 @@ local fmxy = { inv_h = tostring(INV_H),
 }
 
 -- recipe hint
-local function formspec_recipe_hint_bar(recipe_idx)
+local function formspec_recipe_hint_bar(recipe_idx, show_icons)
 	if #biogas_sources == 0 or recipe_idx > #biogas_sources then
 		return ""
 	end
 	local input_item = biogas_sources[recipe_idx]
-	local input_desc = minetest.registered_nodes[input_item].description
+	--local input_desc = minetest.registered_nodes[input_item].description
 	local recipe = biogas_recipes[input_item]
-	return "label[0.5,3.25;Recipe]" ..
+	return (show_icons and "item_image[0,0;1,1;" .. input_item .. "]"
+		or "") ..
+	"label[0.5,3.25;Recipe]" ..
 	"image_button[1.5,3.3;0.5,0.5;;left;<]" ..
 	"label[2,3.25;" ..
 		string.format("%2d / %2d", recipe_idx, #biogas_sources) ..
@@ -156,22 +158,19 @@ end
 -- recipe_idx - index of recipe shown at hint bar
 -- show_icons - show image hints (bool)
 local function formspec(state, item_percent, recipe_idx, show_icons)
-	local inv_hint = show_icons and #biogas_sources > 0
-	local inv_key = inv_hint and biogas_sources[1] or ""
 	return "size[8,8.25]" ..
 	default.gui_bg ..
 	default.gui_bg_img ..
 	default.gui_slots ..
 	"list[context;src;0,0;" .. fmxy.inv_in_w .. "," .. fmxy.inv_h .. ";]" ..
-	(inv_hint and "item_image[0,0;1,1;" .. inv_key .. "]" or "") ..
 	"list[context;cur;" .. fmxy.mid_x .. ",0;1,1;]" ..
 	"image[" .. fmxy.mid_x .. ",1;1,1;gui_furnace_arrow_bg.png^[lowpart:" ..
 		tostring(item_percent) ..
 		":gui_furnace_arrow_fg.png^[transformR270]" ..
 	"image_button[" .. fmxy.mid_x .. ",2;1,1;" ..
 		tubelib.state_button(state) .. ";button;]" ..
-	formspec_recipe_hint_bar(recipe_idx) ..
-	(inv_hint and "item_image[" .. fmxy.inv_out_x ..
+	formspec_recipe_hint_bar(recipe_idx, show_icons) ..
+	(show_icons and "item_image[" .. fmxy.inv_out_x ..
 		",0;1,1;tubelib_addons1:biogas]" or "") ..
 	"list[context;dst;" .. fmxy.inv_out_x .. ",0;" .. fmxy.inv_out_w ..
 		"," .. fmxy.inv_h .. ";]" ..
