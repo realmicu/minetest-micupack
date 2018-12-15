@@ -733,9 +733,9 @@ tubelib.register_node("biogasmachines:compactor", { "biogasmachines:compactor_ac
 minetest.register_craft({
 	output = "biogasmachines:compactor",
 	recipe = {
-		{ "default:obsidian_block", "biogasmachines:gasfurnace", "" },
-		{ "biogasmachines:freezer", "default:diamondblock", "" },
-		{ "", "", "" },
+		{ "default:steelblock", "default:obsidian_block", "default:steelblock" },
+		{ "default:mese_crystal", "default:diamondblock", "tubelib:tube1" },
+		{ "group:wood", "default:obsidian_block", "group:wood" },
 	},
 })
 
