@@ -69,7 +69,8 @@ local SOURCE_EMPTY = 0
 local SOURCE_BUCKET = 1
 local SOURCE_PIPE = 2
 -- water sources
-local water_buckets = { "bucket:bucket_water", "bucket:bucket_river_water" }
+local water_bucket = { ["bucket:bucket_water"] = true,
+		       ["bucket:bucket_river_water"] = true }
 
 --[[
 	--------
@@ -148,16 +149,10 @@ end
 	-------
 ]]--
 
--- check if item is bucket with water (bool)
-local function is_water_bucket(stack)
-	local stackname = stack:get_name()
-	return biogasmachines.is_member_of(stackname, water_buckets)
-end
-
 -- get bucket with water (itemstack)
 local function get_water_bucket(inv, listname)
 	local stack = ItemStack({})
-	for _, i in ipairs(water_buckets) do
+	for i, _ in pairs(water_bucket) do
 		stack = inv:remove_item(listname, ItemStack(i .. " 1"))
 		if not stack:is_empty() then break end
 	end
@@ -263,7 +258,7 @@ local function allow_metadata_inventory_put(pos, listname, index, stack, player)
 		return 0
 	end
 	if listname == "src" then
-		if is_water_bucket(stack) then
+		if water_bucket[stack:get_name()] then
 			return stack:get_count()
 		else
 			return 0
@@ -594,7 +589,7 @@ tubelib.register_node("biogasmachines:freezer", { "biogasmachines:freezer_active
 
 	on_push_item = function(pos, side, item)
 		local meta = minetest.get_meta(pos)
-		if is_water_bucket(item) then
+		if water_bucket[item:get_name()] then
 			return tubelib.put_item(meta, "src", item)
 		elseif item:get_name() == "tubelib_addons1:biogas" then
 			return tubelib.put_item(meta, "fuel", item)
@@ -650,7 +645,7 @@ if minetest.get_modpath("unified_inventory") then
 		width = 1,
 		height = 1,
 	})
-	for _, i in ipairs(water_buckets) do
+	for i, _ in pairs(water_bucket) do
 		unified_inventory.register_craft({
 			type = "freezing",
 			items = { i },

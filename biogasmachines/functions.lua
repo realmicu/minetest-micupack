@@ -9,9 +9,8 @@
 	Helper file for all machines that accept water through pipes from
 	'pipeworks' mod.
 
-	Note: due to pipeworks being WIP, the only valid water connection
-	for now is from top or bottom - machine face orientation is apparently
-	ignored by pipe logic, 'back' for pipes means always param2 = 0 (z+).
+	Note: machine face orientation is apparently ignored by pipe logic,
+	'back' for pipes means always param2 = 0 (z+).
 
 	License: LGPLv2.1+
 	=======================================================================
@@ -19,21 +18,27 @@
 ]]--
 
 -- all pipeworks objects that can carry water but are not junctions
-local pipeworks_straight_objects = {
-	"pipeworks:straight_pipe_loaded",
-	"pipeworks:entry_panel_loaded",
-	"pipeworks:valve_on_loaded",
-	"pipeworks:flow_sensor_loaded",
+local pipeworks_straight_object = {
+	["pipeworks:straight_pipe_loaded"] = true,
+	["pipeworks:entry_panel_loaded"] = true,
+	["pipeworks:valve_on_loaded"] = true,
+	["pipeworks:flow_sensor_loaded"] = true,
 }
 
 -- direction attributes for pipe connections
 local ctable = {
-	["top"] = { dv = { x = 0, y = 1, z = 0 }, p2 = { 17 } },
-	["bottom"] = { dv = { x = 0, y = -1, z = 0 }, p2 = { 17 } },
-	["front"] = { dv = { x = 0, y = 0, z = -1 }, p2 = { 0, 2 } },
-	["back"] = { dv = { x = 0, y = 0, z = 1 }, p2 = { 0, 2 } },
-	["left"] = { dv = { x = -1, y = 0, z = 0 }, p2 = { 1, 3 } },
-	["right"] = { dv = { x = 1, y = 0, z = 0 }, p2 = { 1, 3 } },
+	["top"] = { dv = { x = 0, y = 1, z = 0 },
+		    p2 = { [17] = true } },
+	["bottom"] = { dv = { x = 0, y = -1, z = 0 },
+		       p2 = { [17] = true } },
+	["front"] = { dv = { x = 0, y = 0, z = -1 },
+		      p2 = { [0] = true, [2] = true } },
+	["back"] = { dv = { x = 0, y = 0, z = 1 },
+		      p2 = { [0] = true, [2] = true } },
+	["left"] = { dv = { x = -1, y = 0, z = 0 },
+		     p2 = { [1] = true, [3] = true } },
+	["right"] = { dv = { x = 1, y = 0, z = 0 },
+		      p2 = { [1] = true, [3] = true } },
 }
 
 --[[
@@ -41,14 +46,6 @@ local ctable = {
 	Public
 	------
 ]]--
-
--- check if node is in array
-function biogasmachines.is_member_of(name, array)
-        for _, n in ipairs(array) do
-                if n == name then return true end
-        end
-        return false
-end
 
 -- Check if machine is connected to pipe network and water flows into machine
 -- Parameters: node position, node object (optional)
@@ -74,10 +71,8 @@ function biogasmachines.is_pipe_with_water(pos, opt_node)
 				"^pipeworks:pipe_.*_loaded") then
 				return true
 			end
-			if d_node and biogasmachines.is_member_of(
-					d_node.param2, ctable[d].p2)
-				and biogasmachines.is_member_of(
-					d_node.name, pipeworks_straight_objects)
+			if d_node and ctable[d].p2[d_node.param2]
+				and pipeworks_straight_object[d_node.name]
 					then
 				return true
 			end
