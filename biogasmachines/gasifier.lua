@@ -2,9 +2,9 @@
 
 	=======================================================================
 	Tubelib Biogas Machines Mod
-	by Micu (c) 2018
+	by Micu (c) 2018, 2019
 
-	Copyright (C) 2018 Michal Cieslakiewicz
+	Copyright (C) 2018, 2019 Michal Cieslakiewicz
 
 	Gasifier is a machine designed to slowly extract Biogas from fossil
 	fuels and other compressed dry organic materials.
@@ -18,6 +18,9 @@
 	* if there is nothing to process, machine enters standby mode; it
 	  will automatically pick up work as soon as any valid item is loaded
 	  into input (source) tray
+	* if output tray is full and no new items can be put there, machine
+	  changes state to blocked (special standby mode); it will resume
+	  work as soon as there is space in output inventory
 	* there is 1 tick gap between processing items to perform machinery
 	  cleaning and reload working tray; this is a design choice
 	* working tray can only be emptied when machine is stopped; this tray
@@ -26,6 +29,14 @@
 	  empty
 	* when active, due to high temperature inside, machine becomes a light
 	  source of level 5
+
+	Tubelib v2 implementation info:
+	* device updates itself every tick, so cycle_time must be set to 1
+	  even though production takes longer (start method sets timer to
+	  this value)
+	* keep_running function is called every time item is produced
+	  (not every processing tick - function does not accept neither 0
+	  nor fractional values for num_items parameter)
 
 	License: LGPLv2.1+
 	=======================================================================
@@ -44,7 +55,9 @@ local biogas_recipes = {}
 local biogas_sources = {}
 -- timing
 local TIMER_TICK_SEC = 1		-- Node timer tick
-local TICKS_TO_SLEEP = 5		-- Tubelib standby
+local STANDBY_TICKS = 4			-- Standby mode timer frequency factor
+local COUNTDOWN_TICKS = 4		-- Ticks to standby
+
 -- machine inventory
 local INV_H = 3				-- Inventory height (do not change)
 local INV_IN_W = 2			-- Input inventory width
@@ -120,16 +133,15 @@ local fmxy = { inv_h = tostring(INV_H),
 	inv_out_x = tostring(INV_IN_W + 2),
 }
 
--- recipe hint
-local function formspec_recipe_hint_bar(recipe_idx, show_icons)
+-- recipe hint bar
+local function formspec_recipe_hint_bar(recipe_idx)
 	if #biogas_sources == 0 or recipe_idx > #biogas_sources then
 		return ""
 	end
 	local input_item = biogas_sources[recipe_idx]
 	--local input_desc = minetest.registered_nodes[input_item].description
 	local recipe = biogas_recipes[input_item]
-	return (show_icons and "item_image[0,0;1,1;" .. input_item .. "]"
-		or "") ..
+	return "item_image[0,0;1,1;" .. input_item .. "]" ..
 	"label[0.5,3.25;Recipe]" ..
 	"image_button[1.5,3.3;0.5,0.5;;left;<]" ..
 	"label[2,3.25;" ..
@@ -152,12 +164,17 @@ local function formspec_recipe_hint_bar(recipe_idx, show_icons)
 		tostring(recipe.extra:get_count()) .. "]" or "")
 end
 
--- Parameters:
--- state - tubelib state
--- item_percent - item completion
--- recipe_idx - index of recipe shown at hint bar
--- show_icons - show image hints (bool)
-local function formspec(state, item_percent, recipe_idx, show_icons)
+-- formspec
+local function formspec(self, pos, meta)
+	local state = meta:get_int("tubelib_state")
+	local recipe_idx = meta:get_int("recipe_idx")
+	local item_name = meta:get_string("item_name")
+	local item_ticks = meta:get_int("item_ticks")
+        local item_pct = 0
+        if item_name ~= "" and item_ticks >= 0 then
+                local tot_ticks = biogas_recipes[item_name].time
+                item_pct = 100 * (tot_ticks - item_ticks) / tot_ticks
+	end
 	return "size[8,8.25]" ..
 	default.gui_bg ..
 	default.gui_bg_img ..
@@ -165,13 +182,11 @@ local function formspec(state, item_percent, recipe_idx, show_icons)
 	"list[context;src;0,0;" .. fmxy.inv_in_w .. "," .. fmxy.inv_h .. ";]" ..
 	"list[context;cur;" .. fmxy.mid_x .. ",0;1,1;]" ..
 	"image[" .. fmxy.mid_x .. ",1;1,1;gui_furnace_arrow_bg.png^[lowpart:" ..
-		tostring(item_percent) ..
-		":gui_furnace_arrow_fg.png^[transformR270]" ..
+		tostring(item_pct) .. ":gui_furnace_arrow_fg.png^[transformR270]" ..
 	"image_button[" .. fmxy.mid_x .. ",2;1,1;" ..
-		tubelib.state_button(state) .. ";button;]" ..
-	formspec_recipe_hint_bar(recipe_idx, show_icons) ..
-	(show_icons and "item_image[" .. fmxy.inv_out_x ..
-		",0;1,1;tubelib_addons1:biogas]" or "") ..
+		self:get_state_button_image(meta) .. ";state_button;]" ..
+	formspec_recipe_hint_bar(recipe_idx) ..
+	"item_image[" .. fmxy.inv_out_x .. ",0;1,1;tubelib_addons1:biogas]" ..
 	"list[context;dst;" .. fmxy.inv_out_x .. ",0;" .. fmxy.inv_out_w ..
 		"," .. fmxy.inv_h .. ";]" ..
 	"list[current_player;main;0,4;8,1;]" ..
@@ -208,82 +223,59 @@ local function get_input_item(inv, listname)
 	return stack
 end
 
-local function gasifier_start(pos)
-	local node = minetest.get_node(pos)
-	local meta = minetest.get_meta(pos)
-	local number = meta:get_string("number")
-	local recipe_idx = meta:get_int("recipe_idx")
-	local label = minetest.registered_nodes[node.name].description
+-- reset processing data
+local function state_meta_reset(pos, meta, oldstate)
 	meta:set_int("item_ticks", -1)
-	meta:set_int("running", TICKS_TO_SLEEP)
-	meta:set_string("infotext", label .. " " .. number .. ": running")
-	meta:set_string("formspec", formspec(tubelib.RUNNING, 0, recipe_idx, true))
-	node.name = "biogasmachines:gasifier_active"
-	minetest.swap_node(pos, node)
-	minetest.get_node_timer(pos):start(TIMER_TICK_SEC)
-	return false
+	meta:set_string("item_name", "")
 end
 
-local function gasifier_stop(pos)
-	local node = minetest.get_node(pos)
-	local meta = minetest.get_meta(pos)
-	local number = meta:get_string("number")
-	local recipe_idx = meta:get_int("recipe_idx")
-	local label = minetest.registered_nodes[node.name].description
-	meta:set_int("item_ticks", -1)
-	meta:set_int("running", tubelib.STATE_STOPPED)
-	meta:set_string("infotext", label .. " " .. number .. ": stopped")
-	meta:set_string("formspec", formspec(tubelib.STOPPED, 0, recipe_idx, true))
-	node.name = "biogasmachines:gasifier"
-	minetest.swap_node(pos, node)
-        minetest.get_node_timer(pos):stop()
-        return false
-end
+--[[
+	-------------
+	State machine
+	-------------
+]]--
 
-local function gasifier_idle(pos)
-	local node = minetest.get_node(pos)
-	local meta = minetest.get_meta(pos)
-	local number = meta:get_string("number")
-	local recipe_idx = meta:get_int("recipe_idx")
-	local label = minetest.registered_nodes[node.name].description
-	meta:set_int("item_ticks", -1)
-	meta:set_int("running", tubelib.STATE_STANDBY)
-	meta:set_string("infotext", label .. " " .. number .. ": standby")
-	meta:set_string("formspec", formspec(tubelib.STANDBY, 0, recipe_idx, true))
-	node.name = "biogasmachines:gasifier"
-	minetest.swap_node(pos, node)
-        minetest.get_node_timer(pos):start(TIMER_TICK_SEC * TICKS_TO_SLEEP)
-        return false
-end
+local machine = tubelib.NodeStates:new({
+	node_name_passive = "biogasmachines:gasifier",
+	node_name_active = "biogasmachines:gasifier_active",
+	node_name_defect = "biogasmachines:gasifier_defect",
+	infotext_name = "Tubelib Gasifier",
+	cycle_time = TIMER_TICK_SEC,
+	standby_ticks = STANDBY_TICKS,
+	has_item_meter = true,
+	aging_factor = 8,
+	on_start = state_meta_reset,
+	on_stop = state_meta_reset,
+	formspec_func = formspec,
+})
 
-local function gasifier_fault(pos)
-	local node = minetest.get_node(pos)
-	local meta = minetest.get_meta(pos)
-	local number = meta:get_string("number")
-	local recipe_idx = meta:get_int("recipe_idx")
-	local label = minetest.registered_nodes[node.name].description
-	meta:set_int("item_ticks", -1)
-	meta:set_int("running", tubelib.STATE_FAULT)
-	meta:set_string("infotext", label .. " " .. number .. ": fault")
-	meta:set_string("formspec", formspec(tubelib.FAULT, 0, recipe_idx, true))
-	node.name = "biogasmachines:gasifier"
-	minetest.swap_node(pos, node)
-	minetest.get_node_timer(pos):stop()
-	return false
-end
-
-local function update_recipe_hint_bar(pos)
-	local meta = minetest.get_meta(pos)
-	local recipe_idx = meta:get_int("recipe_idx")
-	local state = tubelib.state(meta:get_int("running"))
-	local item_name = meta:get_string("item_name")
-	local item_ticks = meta:get_int("item_ticks")
-	local item_pct = 0
-	if item_name ~= "" and item_ticks >= 0 then
-		local tot_ticks = biogas_recipes[item_name].time
-		item_pct = 100 * (tot_ticks - item_ticks) / tot_ticks
+-- customized version of NodeStates:idle()
+local function countdown_to_halt(pos, meta, target_state)
+	if target_state ~= tubelib.STANDBY and
+	   target_state ~= tubelib.BLOCKED and
+	   target_state ~= tubelib.STOPPED and
+	   target_state ~= tubelib.FAULT then
+		return true
 	end
-	meta:set_string("formspec", formspec(state, item_pct, recipe_idx, true))
+	local countdown = meta:get_int("tubelib_countdown")
+	if countdown > 0 then
+		countdown = countdown - 1
+		meta:set_int("tubelib_countdown", countdown)
+		if countdown == 0 then
+			if target_state == tubelib.FAULT then
+				state_meta_reset(pos, meta)
+				machine:fault(pos, meta)
+			elseif target_state == tubelib.STOPPED then
+				machine:stop(pos, meta)
+			elseif target_state == tubelib.BLOCKED then
+				machine:blocked(pos, meta)
+			else
+				machine:standby(pos, meta)
+			end
+			return false
+		end
+	end
+	return true
 end
 
 --[[
@@ -292,8 +284,11 @@ end
 	---------
 ]]--
 
--- do not allow to dig non-empty machine
+-- do not allow to dig protected or non-empty machine
 local function can_dig(pos, player)
+	if minetest.is_protected(pos, player:get_player_name()) then
+		return false
+	end
 	local meta = minetest.get_meta(pos);
 	local inv = meta:get_inventory()
 	return inv:is_empty("src") and inv:is_empty("dst")
@@ -302,6 +297,20 @@ end
 -- cleanup after digging
 local function after_dig_node(pos, oldnode, oldmetadata, digger)
 	tubelib.remove_node(pos)
+end
+
+-- init machine after placement
+local function after_place_node(pos, placer, itemstack, pointed_thing)
+	local meta = minetest.get_meta(pos)
+	local inv = meta:get_inventory()
+	inv:set_size('src', INV_H * INV_IN_W)
+	inv:set_size('cur', 1)
+	inv:set_size('dst', INV_H * INV_OUT_W)
+	meta:set_string("owner", placer:get_player_name())
+	state_meta_reset(pos, meta)
+	meta:set_int("recipe_idx", 1)
+	local number = tubelib.add_node(pos, "biogasmachines:gasifier")
+	machine:node_init(pos, number)
 end
 
 -- validate incoming items
@@ -325,7 +334,7 @@ end
 local function allow_metadata_inventory_move(pos, from_list, from_index, to_list, to_index, count, player)
 	local meta = minetest.get_meta(pos)
 	if to_list == "cur" or
-	   (from_list == "cur" and meta:get_int("running") > 0) then
+	   (from_list == "cur" and machine:get_state(meta) == tubelib.RUNNING) then
 		return 0
 	end
 	local inv = meta:get_inventory()
@@ -340,31 +349,11 @@ local function allow_metadata_inventory_take(pos, listname, index, stack, player
 	end
 	if listname == "cur" then
 		local meta = minetest.get_meta(pos)
-		if meta:get_int("running") > 0 then
+		if machine:get_state(meta) == tubelib.RUNNING then
 			return 0
 		end
 	end
 	return stack:get_count()
-end
-
--- punch machine to see status info
-local function on_punch(pos, node, puncher, pointed_thing)
-	local meta = minetest.get_meta(pos)
-	local player_name = puncher:get_player_name()
-	if meta:get_string("owner") ~= player_name then
-		return false
-	end
-	local msgclr = { ["fault"] = "#FFBFBF",
-			 ["standby"] = "#BFFFFF",
-			 ["stopped"] = "#BFBFFF",
-			 ["running"] = "#BFFFBF"
-	}
-	local state = tubelib.statestring(meta:get_int("running"))
-	minetest.chat_send_player(player_name,
-		minetest.colorize("#FFFF00", "[Gasifier:" ..
-		meta:get_string("number") .. "]") .. " Status is " ..
-		minetest.colorize(msgclr[state], "\"" .. state .. "\""))
-	return true
 end
 
 -- formspec callback
@@ -372,16 +361,11 @@ local function on_receive_fields(pos, formname, fields, player)
 	if minetest.is_protected(pos, player:get_player_name()) then
 		return
 	end
-	local meta = minetest.get_meta(pos)
-	local running = meta:get_int("running")
-	if fields and fields.button then
-		if running > 0 or running == tubelib.STATE_FAULT then
-			gasifier_stop(pos)
-		else
-			gasifier_start(pos)
-		end
+	if machine:state_button_event(pos, fields) then
+		return
 	end
 	if fields and (fields.left or fields.right) then
+		local meta = minetest.get_meta(pos)
 		local recipe_idx = meta:get_int("recipe_idx")
 		if fields.left then
 			recipe_idx = math.max(recipe_idx - 1, 1)
@@ -390,7 +374,7 @@ local function on_receive_fields(pos, formname, fields, player)
 			recipe_idx = math.min(recipe_idx + 1, #biogas_sources)
 		end
 		meta:set_int("recipe_idx", recipe_idx)
-		update_recipe_hint_bar(pos)
+		meta:set_string("formspec", formspec(machine, pos, meta))
 	end
 end
 
@@ -400,36 +384,31 @@ local function on_timer(pos, elapsed)
 	local meta = minetest.get_meta(pos)
 	local inv = meta:get_inventory()
 	local label = minetest.registered_nodes[node.name].description
-	local number = meta:get_string("number")
-	local running = meta:get_int("running")
+	local number = meta:get_string("tubelib_number")
 	local itemcnt = meta:get_int("item_ticks")
 	local itemname = meta:get_string("item_name")
-	local prodtime = -1
 	if itemcnt < 0 or itemname == "" then
 		-- idle and ready, check for something to work with
 		if inv:is_empty("src") then
-			if running > 0 then
-				-- no source item, count towards standby
-				running = running - 1
-				meta:set_int("running", running)
-				if running == 0 then
-					return gasifier_idle(pos)
-				end
-			end
-			return true
+			-- no source item, count towards standby
+			return countdown_to_halt(pos, meta, tubelib.STANDBY)
 		end
-		if running == tubelib.STATE_STANDBY then
+		if machine:get_state(meta) == tubelib.STANDBY then
 			-- something to do, wake up and re-entry
-			return gasifier_start(pos)
+			machine:start(pos, meta, true)
+			return false
 		end
 		-- choose item
+		local prodtime = -1
 		local inputname = nil
 		if not inv:is_empty("cur") then
 			-- leftover item, start from beginning
 			local inp = inv:get_stack("cur", 1)
 			inputname = inp:get_name()
 			if not biogas_recipes[inputname] then
-				return gasifier_fault(pos)	-- oops
+				state_meta_reset(pos, meta)
+				machine:fault(pos, meta)	-- oops
+				return false
 			end
 			prodtime = biogas_recipes[inputname].time
 		else
@@ -447,18 +426,32 @@ local function on_timer(pos, elapsed)
 				end
 			end
 			if not inputname then
-				return true
+				-- no space in output
+				return countdown_to_halt(pos, meta, tubelib.BLOCKED)
+			elseif machine:get_state(meta) == tubelib.BLOCKED then
+				-- new free output slots, wake up and re-entry
+				machine:start(pos, meta, true)
+				return false
 			end
 			local inp = inv:remove_item("src", ItemStack(inputname .. " 1"))
 			if inp:is_empty() then
-				return gasifier_fault(pos)	-- oops
+				state_meta_reset(pos, meta)
+				machine:fault(pos, meta)	-- oops
+				return false
 			end
 			inv:add_item("cur", inp)
 		end
 		meta:set_string("item_name", inputname)
-		itemcnt = prodtime
+		meta:set_int("item_ticks", prodtime)
 	else
-		-- production tick
+		-- production
+		if machine:get_state(meta) ~= tubelib.RUNNING then
+			-- exception, should not happen - oops
+			state_meta_reset(pos, meta)
+			machine:fault(pos, meta)
+			return false
+		end
+		-- add item tick
 		itemcnt = itemcnt - 1
 		local recipe = biogas_recipes[itemname]
 		if itemcnt == 0 then
@@ -469,18 +462,15 @@ local function on_timer(pos, elapsed)
 				inv:add_item("dst", recipe.extra)
 			end
 			inv:set_stack("cur", 1, ItemStack({}))
-			meta:set_string("item_name", "")
-			itemcnt = -1
+			state_meta_reset(pos, meta)
+			-- item produced, increase aging
+			machine:keep_running(pos, meta, COUNTDOWN_TICKS, 1)
 		else
-			prodtime = recipe.time
+			meta:set_int("item_ticks", itemcnt)
 		end
 	end
-	meta:set_int("item_ticks", itemcnt)
-	meta:set_int("running", TICKS_TO_SLEEP)
-	meta:set_string("infotext", label .. " " .. number .. ": running")
-	meta:set_string("formspec", formspec(tubelib.RUNNING,
-		100 * (prodtime - itemcnt) / prodtime,
-		meta:get_int("recipe_idx"), true))
+	meta:set_int("tubelib_countdown", COUNTDOWN_TICKS)
+	meta:set_string("formspec", formspec(machine, pos, meta))
 	return true
 end
 
@@ -501,7 +491,6 @@ minetest.register_node("biogasmachines:gasifier", {
 		"biogasmachines_gasifier_side.png",
 		"biogasmachines_gasifier_side.png"
 	},
-
 	drawtype = "nodebox",
 	node_box = {
 		type = "fixed",
@@ -522,9 +511,14 @@ minetest.register_node("biogasmachines:gasifier", {
 	is_ground_content = false,
 	sounds = default.node_sound_metal_defaults(),
 
+	drop = "",
 	can_dig = can_dig,
-	after_dig_node = after_dig_node,
-	on_punch = on_punch,
+
+	after_dig_node = function(pos, oldnode, oldmetadata, digger)
+		machine:after_dig_node(pos, oldnode, oldmetadata, digger)
+		after_dig_node(pos, oldnode, oldmetadata, digger)
+	end,
+
 	on_rotate = screwdriver.disallow,
 	on_timer = on_timer,
 	on_receive_fields = on_receive_fields,
@@ -532,24 +526,7 @@ minetest.register_node("biogasmachines:gasifier", {
 	allow_metadata_inventory_move = allow_metadata_inventory_move,
 	allow_metadata_inventory_take = allow_metadata_inventory_take,
 
-	after_place_node = function(pos, placer, itemstack, pointed_thing)
-		local node = minetest.get_node(pos)
-		local meta = minetest.get_meta(pos)
-		local number = tubelib.add_node(pos, "biogasmachines:gasifier")
-		local inv = meta:get_inventory()
-		inv:set_size('src', INV_H * INV_IN_W)
-		inv:set_size('cur', 1)
-		inv:set_size('dst', INV_H * INV_OUT_W)
-		local label = minetest.registered_nodes[node.name].description
-		meta:set_string("number", number)
-		meta:set_string("owner", placer:get_player_name())
-		meta:set_int("running", tubelib.STATE_STOPPED)
-		meta:set_string("item_name", "")
-		meta:set_int("item_ticks", -1)
-		meta:set_int("recipe_idx", 1)
-		meta:set_string("infotext", label .. " " .. number .. ": stopped")
-		meta:set_string("formspec", formspec(tubelib.STOPPED, 0, 1, true))
-	end,
+	after_place_node = after_place_node,
 })
 
 minetest.register_node("biogasmachines:gasifier_active", {
@@ -593,19 +570,68 @@ minetest.register_node("biogasmachines:gasifier_active", {
 	light_source = 5,
 	sounds = default.node_sound_metal_defaults(),
 
+	drop = "",
 	can_dig = can_dig,
-	after_dig_node = after_dig_node,
-	on_punch = on_punch,
+
+	after_dig_node = function(pos, oldnode, oldmetadata, digger)
+		machine:after_dig_node(pos, oldnode, oldmetadata, digger)
+		after_dig_node(pos, oldnode, oldmetadata, digger)
+	end,
+
 	on_rotate = screwdriver.disallow,
 	on_timer = on_timer,
 	on_receive_fields = on_receive_fields,
 	allow_metadata_inventory_put = allow_metadata_inventory_put,
 	allow_metadata_inventory_move = allow_metadata_inventory_move,
 	allow_metadata_inventory_take = allow_metadata_inventory_take,
-	drop = "biogasmachines:gasifier",
 })
 
-tubelib.register_node("biogasmachines:gasifier", { "biogasmachines:gasifier_active" }, {
+minetest.register_node("biogasmachines:gasifier_defect", {
+	description = "Tubelib Gasifier",
+	tiles = {
+		-- up, down, right, left, back, front
+		"biogasmachines_gasifier_top.png",
+		"biogasmachines_bottom.png",
+		"biogasmachines_gasifier_side.png^tubelib_defect.png",
+		"biogasmachines_gasifier_side.png^tubelib_defect.png",
+		"biogasmachines_gasifier_side.png^tubelib_defect.png",
+		"biogasmachines_gasifier_side.png^tubelib_defect.png"
+	},
+	drawtype = "nodebox",
+	node_box = {
+		type = "fixed",
+		fixed = {
+			{ -0.5, -0.5, -0.5, 0.5, 0.375, 0.5 },
+			{ -0.375, 0.375, -0.375, 0.375, 0.5, 0.375 },
+		},
+        },
+	selection_box = {
+		type = "fixed",
+		fixed = { -0.5, -0.5, -0.5, 0.5, 0.375, 0.5 },
+	},
+
+	paramtype = "light",
+	sunlight_propagates = true,
+	paramtype2 = "facedir",
+	groups = { choppy = 2, cracky = 2, crumbly = 2, not_in_creative_inventory = 1 },
+	is_ground_content = false,
+	sounds = default.node_sound_metal_defaults(),
+
+	can_dig = can_dig,
+	after_dig_node = after_dig_node,
+	on_rotate = screwdriver.disallow,
+	allow_metadata_inventory_put = allow_metadata_inventory_put,
+	allow_metadata_inventory_move = allow_metadata_inventory_move,
+	allow_metadata_inventory_take = allow_metadata_inventory_take,
+
+	after_place_node = function(pos, placer, itemstack, pointed_thing)
+		after_place_node(pos, placer, itemstack, pointed_thing)
+		machine:defect(pos, minetest.get_meta(pos))
+	end,
+})
+
+tubelib.register_node("biogasmachines:gasifier",
+	{ "biogasmachines:gasifier_active", "biogasmachines:gasifier_defect" }, {
 
 	on_push_item = function(pos, side, item)
 		local meta = minetest.get_meta(pos)
@@ -626,16 +652,20 @@ tubelib.register_node("biogasmachines:gasifier", { "biogasmachines:gasifier_acti
 	end,
 
 	on_recv_message = function(pos, topic, payload)
-		local meta = minetest.get_meta(pos)
-		if topic == "on" then
-			gasifier_start(pos)
-		elseif topic == "off" then
-			gasifier_stop(pos)
-		elseif topic == "state" then
-			return tubelib.statestring(meta:get_int("running"))
+		local resp = machine:on_receive_message(pos, topic, payload)
+		if resp then
+			return resp
 		else
 			return "unsupported"
 		end
+	end,
+
+	on_node_load = function(pos)
+		machine:on_node_load(pos)
+	end,
+
+	on_node_repair = function(pos)
+		return machine:on_node_repair(pos)
 	end,
 })
 

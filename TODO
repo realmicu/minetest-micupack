@@ -1,14 +1,18 @@
-make remaining Biogas Machines compatible with Tubelib2 similar to freezer v2:
-	* gasifier
+make remaining Biogas Machines compatible with Tubelib2:
 	* gasfurnace
 	* jetfurnace
 	* compactor
 
-change slprogtools: read "tubelib_number" instead of "number" metadata
+change slprogtools:
+	* read "tubelib_number" instead of "number" metadata
+	* add support for 'func' code
+
+change furnacemonitor:
+	* read "tubelib_number" instead of "number" metadata
 
 tubelib -> tubelib2 tasks:
 
-0. Affected mods: biogasmachines, slprogtools
+0. Affected mods: biogasmachines, slprogtools, furnacemonitor
 
 1. Biogasmachines - change formspec:
    * parameters are : formspec(self, pos, meta)
