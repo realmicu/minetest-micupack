@@ -2,9 +2,9 @@
 
 	=======================================================================
 	Tubelib Biogas Machines Mod
-	by Micu (c) 2018
+	by Micu (c) 2018, 2019
 
-	Copyright (C) 2018 Michal Cieslakiewicz
+	Copyright (C) 2018, 2019 Michal Cieslakiewicz
 
 	Freezer - Biogas-powered machine that converts water to ice
 	(technically Biogas is a coolant here, not fuel, however it
@@ -23,11 +23,19 @@
 	Operational info:
 	* machine checks for buckets with water first and if there are none
 	  tries to take water from pipeline
-	* when fuel ends, machine switches off automatically and has to
-	  be powered on again manually after refilling Biogas
-	* if there is nothing to freeze, machine enters standby mode; it
-	  will automatically pick up work as soon as any water source becomes
-	  available again
+	* when fuel ends, machine automatically enters fault mode and has to
+	  be manually powered on again after refilling Biogas
+	* fault condition informs operator that there is no fuel in running
+	  machine; when Biogas tank is emptied manually after machine enters
+	  standby or blocked state nothing happens as device is not operating
+	* if output tray is full and no new items can be put there, freezer
+	  changes state to blocked (special standby mode); it will resume
+	  work as soon as there is space in output inventory
+	* if there is nothing to freeze but there is still Biogas in tank,
+	  machine enters standby mode; it will automatically pick up work
+	  as soon as any water source becomes available again; when Biogas
+	  tank is also exhausted in the process, machine signals fault
+	  instead to notify operator than it will not be able to resume work
 	* there is 1 tick gap between items to unload ice and load internal
 	  water tank or freezing tray; this a design choice to make timer
 	  callback run faster
@@ -44,6 +52,14 @@
 	* machine cannot be recovered unless input, output and fuel trays
 	  are all empty
 
+	Tubelib v2 implementation info:
+	* device updates itself every tick, so cycle_time must be set to 1
+	  even though production takes longer (start method sets timer to
+	  this value)
+	* keep_running function is called every time item is produced
+	  (not every processing tick - function does not accept neither 0
+	  nor fractional values for num_items parameter)
+
 	License: LGPLv2.1+
 	=======================================================================
 	
@@ -56,10 +72,11 @@
 ]]--
 
 -- timing
-local BIOGAS_TIME_SEC = 24		-- Biogas work time
-local ICE_TIME_SEC = 4			-- Ice creation time
+local BIOGAS_TICKS = 24			-- Biogas work time
+local ICE_TICKS = 4			-- Ice creation time
 local TIMER_TICK_SEC = 1		-- Node timer tick
-local TICKS_TO_SLEEP = 5		-- Tubelib standby
+local STANDBY_TICKS = 4			-- Standby mode timer frequency factor
+local COUNTDOWN_TICKS = 4		-- Ticks to standby
 -- machine inventory
 local INV_H = 3				-- Inventory height
 local INV_IN_W = 4			-- Input inventory width
@@ -77,6 +94,7 @@ local water_bucket = { ["bucket:bucket_water"] = true,
 	Formspec
 	--------
 ]]--
+
 -- static data for formspec
 local fmxy = {
 	inv_h = tostring(INV_H),
@@ -84,39 +102,35 @@ local fmxy = {
         mid_x = tostring(INV_IN_W + 1),
         inv_out_w = tostring(INV_OUT_W),
         inv_out_x = tostring(INV_IN_W + 2),
-	biogas_time = tostring(BIOGAS_TIME_SEC * TIMER_TICK_SEC),
-	ice_time = tostring(ICE_TIME_SEC * TIMER_TICK_SEC),
-	ice_qty = tostring(BIOGAS_TIME_SEC / ICE_TIME_SEC)
+	biogas_time = tostring(BIOGAS_TICKS * TIMER_TICK_SEC),
+	ice_time = tostring(ICE_TICKS * TIMER_TICK_SEC),
+	ice_qty = tostring(BIOGAS_TICKS / ICE_TICKS)
 }
 
--- Parameters:
--- state - tubelib state
--- water_pipe -  water from pipeworks (bool)
--- fuel_percent - biogas used
--- item_percent - ice completion
--- show_icons - show image hints (bool)
-local function formspec(state, water_pipe, fuel_percent, item_percent, show_icons)
+-- formspec
+local function formspec(self, pos, meta)
+	local state = meta:get_int("tubelib_state")
+	local source = meta:get_int("source")
+	local fuel_pct = tostring(100 * meta:get_int("fuel_ticks") / BIOGAS_TICKS)
+	local item_pct = tostring(100 * (ICE_TICKS - meta:get_int("item_ticks")) / ICE_TICKS)
 	return "size[8,8.25]" ..
 	default.gui_bg ..
 	default.gui_bg_img ..
 	default.gui_slots ..
 	"list[context;src;0,0;" .. fmxy.inv_in_w .. "," .. fmxy.inv_h .. ";]" ..
-	(show_icons and "item_image[0,0;1,1;bucket:bucket_water]" or "") ..
+	"item_image[0,0;1,1;bucket:bucket_water]" ..
 	"list[context;cur;" .. fmxy.inv_in_w .. ",0;1,1;]" ..
 	"image[" .. fmxy.mid_x .. ",0;1,1;biogasmachines_freezer_pipe_inv_" ..
-		(water_pipe and "fg" or "bg") .. ".png]" ..
+		(source == SOURCE_PIPE and "fg" or "bg") .. ".png]" ..
 	"image[" .. fmxy.inv_in_w ..
 		",1;1,1;biogasmachines_freezer_inv_bg.png^[lowpart:" ..
-		tostring(fuel_percent) ..
-		":biogasmachines_freezer_inv_fg.png]" ..
+		fuel_pct .. ":biogasmachines_freezer_inv_fg.png]" ..
 	"image[" .. fmxy.mid_x .. ",1;1,1;gui_furnace_arrow_bg.png^[lowpart:" ..
-		tostring(item_percent) ..
-		":gui_furnace_arrow_fg.png^[transformR270]" ..
+		item_pct .. ":gui_furnace_arrow_fg.png^[transformR270]" ..
 	"list[context;fuel;" .. fmxy.inv_in_w .. ",2;1,1;]" ..
-	(show_icons and "item_image[" .. fmxy.inv_in_w ..
-		",2;1,1;tubelib_addons1:biogas]" or "") ..
+	"item_image[" .. fmxy.inv_in_w .. ",2;1,1;tubelib_addons1:biogas]" ..
 	"image_button[" .. fmxy.mid_x .. ",2;1,1;" ..
-		tubelib.state_button(state) .. ";button;]" ..
+		self:get_state_button_image(meta) .. ";state_button;]" ..
 	"item_image[1,3.25;0.5,0.5;tubelib_addons1:biogas]" ..
 	"label[1.5,3.25;= " .. fmxy.biogas_time .. " sec]" ..
 	"item_image[3,3.25;0.5,0.5;default:ice]" ..
@@ -125,8 +139,7 @@ local function formspec(state, water_pipe, fuel_percent, item_percent, show_icon
 	"image[5.75,3.25;0.5,0.5;tubelib_gui_arrow.png^[resize:16x16]" ..
 	"item_image[6.25,3.25;0.5,0.5;default:ice]" ..
 	"label[6.75,3.25;x " .. fmxy.ice_qty .. "]" ..
-	(show_icons and "item_image[" .. fmxy.inv_out_x ..
-		",0;1,1;default:ice]" or "") ..
+	"item_image[" .. fmxy.inv_out_x .. ",0;1,1;default:ice]" ..
 	"list[context;dst;" .. fmxy.inv_out_x .. ",0;" .. fmxy.inv_out_w ..
 		"," .. fmxy.inv_h .. ";]" ..
 	"list[current_player;main;0,4;8,1;]" ..
@@ -137,7 +150,7 @@ local function formspec(state, water_pipe, fuel_percent, item_percent, show_icon
 	"listring[current_player;main]" ..
 	"listring[context;fuel]" ..
 	"listring[current_player;main]" ..
-	(state == tubelib.RUNNING and not water_pipe and
+	(state == tubelib.RUNNING and source ~= SOURCE_PIPE and
                 "box[" .. fmxy.inv_in_w .. ",0;0.82,0.9;#2F4FBF]" or
                 "listring[context;cur]listring[current_player;main]") ..
 	default.get_hotbar_bg(0, 4)
@@ -159,75 +172,59 @@ local function get_water_bucket(inv, listname)
 	return stack
 end
 
-local function freezer_start(pos)
-	local node = minetest.get_node(pos)
-	local meta = minetest.get_meta(pos)
-	local number = meta:get_string("number")
-	local fuel = meta:get_int("fuel_ticks")
-	local label = minetest.registered_nodes[node.name].description
+-- reset processing data
+local function state_meta_reset(pos, meta, oldstate)
 	meta:set_int("source", SOURCE_EMPTY)
-	meta:set_int("item_ticks", ICE_TIME_SEC)
-	meta:set_int("running", TICKS_TO_SLEEP)
-	meta:set_string("infotext", label .. " " .. number .. ": running")
-	meta:set_string("formspec", formspec(tubelib.RUNNING, false,
-		100 * fuel / BIOGAS_TIME_SEC, 0, true))
-	node.name = "biogasmachines:freezer_active"
-	minetest.swap_node(pos, node)
-	minetest.get_node_timer(pos):start(TIMER_TICK_SEC)
-	return false
+	meta:set_int("item_ticks", ICE_TICKS)
 end
 
-local function freezer_stop(pos)
-	local node = minetest.get_node(pos)
-	local meta = minetest.get_meta(pos)
-	local number = meta:get_string("number")
-	local fuel = meta:get_int("fuel_ticks")
-	local label = minetest.registered_nodes[node.name].description
-	meta:set_int("source", SOURCE_EMPTY)
-	meta:set_int("item_ticks", ICE_TIME_SEC)
-	meta:set_int("running", tubelib.STATE_STOPPED)
-	meta:set_string("infotext", label .. " " .. number .. ": stopped")
-	meta:set_string("formspec", formspec(tubelib.STOPPED, false,
-		100 * fuel / BIOGAS_TIME_SEC, 0, true))
-	node.name = "biogasmachines:freezer"
-	minetest.swap_node(pos, node)
-        minetest.get_node_timer(pos):stop()
-        return false
-end
+--[[
+	-------------
+	State machine
+	-------------
+]]--
 
-local function freezer_idle(pos)
-	local node = minetest.get_node(pos)
-	local meta = minetest.get_meta(pos)
-	local number = meta:get_string("number")
-	local fuel = meta:get_int("fuel_ticks")
-	local label = minetest.registered_nodes[node.name].description
-	meta:set_int("item_ticks", ICE_TIME_SEC)
-	meta:set_int("running", tubelib.STATE_STANDBY)
-	meta:set_string("infotext", label .. " " .. number .. ": standby")
-	meta:set_string("formspec", formspec(tubelib.STANDBY, false,
-		100 * fuel / BIOGAS_TIME_SEC, 0, true))
-	node.name = "biogasmachines:freezer"
-	minetest.swap_node(pos, node)
-        minetest.get_node_timer(pos):start(TIMER_TICK_SEC * TICKS_TO_SLEEP)
-        return false
-end
+local machine = tubelib.NodeStates:new({
+	node_name_passive = "biogasmachines:freezer",
+	node_name_active = "biogasmachines:freezer_active",
+	node_name_defect = "biogasmachines:freezer_defect",
+	infotext_name = "Tubelib Water Freezer",
+	cycle_time = TIMER_TICK_SEC,
+	standby_ticks = STANDBY_TICKS,
+	has_item_meter = true,
+	aging_factor = 8,
+	on_start = state_meta_reset,
+	on_stop = state_meta_reset,
+	formspec_func = formspec,
+})
 
-local function freezer_fault(pos)
-	local node = minetest.get_node(pos)
-	local meta = minetest.get_meta(pos)
-	local number = meta:get_string("number")
-	local fuel = meta:get_int("fuel_ticks")
-	local label = minetest.registered_nodes[node.name].description
-	meta:set_int("source", SOURCE_EMPTY)
-	meta:set_int("item_ticks", ICE_TIME_SEC)
-	meta:set_int("running", tubelib.STATE_FAULT)
-	meta:set_string("infotext", label .. " " .. number .. ": fault")
-	meta:set_string("formspec", formspec(tubelib.FAULT, false,
-		100 * fuel / BIOGAS_TIME_SEC, 0, true))
-	node.name = "biogasmachines:freezer"
-	minetest.swap_node(pos, node)
-	minetest.get_node_timer(pos):stop()
-	return false
+-- customized version of NodeStates:idle()
+local function countdown_to_halt(pos, meta, target_state)
+	if target_state ~= tubelib.STANDBY and
+	   target_state ~= tubelib.BLOCKED and
+	   target_state ~= tubelib.STOPPED and
+	   target_state ~= tubelib.FAULT then
+		return true
+	end
+	local countdown = meta:get_int("tubelib_countdown")
+	if countdown > 0 then
+		countdown = countdown - 1
+		meta:set_int("tubelib_countdown", countdown)
+		if countdown == 0 then
+			if target_state == tubelib.FAULT then
+				state_meta_reset(pos, meta)
+				machine:fault(pos, meta)
+			elseif target_state == tubelib.STOPPED then
+				machine:stop(pos, meta)
+			elseif target_state == tubelib.BLOCKED then
+				machine:blocked(pos, meta)
+			else
+				machine:standby(pos, meta)
+			end
+			return false
+		end
+	end
+	return true
 end
 
 --[[
@@ -236,8 +233,11 @@ end
 	---------
 ]]--
 
--- do not allow to dig non-empty machine
+-- do not allow to dig protected or non-empty machine
 local function can_dig(pos, player)
+	if minetest.is_protected(pos, player:get_player_name()) then
+		return false
+	end
 	local meta = minetest.get_meta(pos);
 	local inv = meta:get_inventory()
 	return inv:is_empty("src") and inv:is_empty("dst")
@@ -247,6 +247,24 @@ end
 -- cleanup after digging
 local function after_dig_node(pos, oldnode, oldmetadata, digger)
 	tubelib.remove_node(pos)
+	if minetest.get_modpath("pipeworks") then
+		pipeworks.scan_for_pipe_objects(pos)
+	end
+end
+
+-- init machine after placement
+local function after_place_node(pos, placer, itemstack, pointed_thing)
+	local meta = minetest.get_meta(pos)
+	local inv = meta:get_inventory()
+	inv:set_size('src', INV_H * INV_IN_W)
+	inv:set_size('cur', 1)
+	inv:set_size('fuel', 1)
+	inv:set_size('dst', INV_H * INV_OUT_W)
+	meta:set_string("owner", placer:get_player_name())
+	meta:set_int("fuel_ticks", 0)
+	state_meta_reset(pos, meta)
+	local number = tubelib.add_node(pos, "biogasmachines:freezer")
+	machine:node_init(pos, number)
 	if minetest.get_modpath("pipeworks") then
 		pipeworks.scan_for_pipe_objects(pos)
 	end
@@ -279,7 +297,7 @@ end
 local function allow_metadata_inventory_move(pos, from_list, from_index, to_list, to_index, count, player)
 	local meta = minetest.get_meta(pos)
 	if to_list == "cur" or
-	   (from_list == "cur" and meta:get_int("running") > 0) then
+	   (from_list == "cur" and machine:get_state(meta) == tubelib.RUNNING) then
                 return 0
         end
 	local inv = meta:get_inventory()
@@ -294,35 +312,11 @@ local function allow_metadata_inventory_take(pos, listname, index, stack, player
 	end
 	if listname == "cur" then
 		local meta = minetest.get_meta(pos)
-		if meta:get_int("running") > 0 then
+		if machine:get_state(meta) == tubelib.RUNNING then
 			return 0
 		end
 	end
 	return stack:get_count()
-end
-
--- punch machine to see status info
-local function on_punch(pos, node, puncher, pointed_thing)
-	local meta = minetest.get_meta(pos)
-	local player_name = puncher:get_player_name()
-	if meta:get_string("owner") ~= player_name then
-		return false
-	end
-	local msgclr = { ["fault"] = "#FFBFBF",
-			 ["standby"] = "#BFFFFF",
-			 ["stopped"] = "#BFBFFF",
-			 ["running"] = "#BFFFBF",
-			 ["true"] = "#BFFFBF",
-			 ["false"] = "#BFFFFF" }
-	local state = tubelib.statestring(meta:get_int("running"))
-	local pipe = tostring(biogasmachines.is_pipe_with_water(pos, node))
-	minetest.chat_send_player(player_name,
-		minetest.colorize("#FFFF00", "[WaterFreezer:" ..
-		meta:get_string("number") .. "]") .. " Status is " ..
-		minetest.colorize(msgclr[state], "\"" .. state .. "\"") ..
-		", water pipe is " ..
-		minetest.colorize(msgclr[pipe], "\"" .. pipe .. "\""))
-	return true
 end
 
 -- formspec callback
@@ -330,33 +324,22 @@ local function on_receive_fields(pos, formname, fields, player)
 	if minetest.is_protected(pos, player:get_player_name()) then
 		return
 	end
-	local node = minetest.get_node(pos)
-	local meta = minetest.get_meta(pos)
-	local running = meta:get_int("running")
-	local label = minetest.registered_nodes[node.name].description
-	if fields and fields.button then
-		if running > 0 or running == tubelib.STATE_FAULT then
-			freezer_stop(pos)
-		else
-			freezer_start(pos)
-		end
-	end
+	machine:state_button_event(pos, fields)
 end
 
--- default Tubelib tick-based item production
+-- tick-based item production
 local function on_timer(pos, elapsed)
 	local node = minetest.get_node(pos)
 	local meta = minetest.get_meta(pos)
 	local inv = meta:get_inventory()
 	local label = minetest.registered_nodes[node.name].description
-	local number = meta:get_string("number")
-	local running = meta:get_int("running")
+	local number = meta:get_string("tubelib_number")
 	local source = meta:get_int("source")
-	local fuelcnt = meta:get_int("fuel_ticks")
-	local itemcnt = meta:get_int("item_ticks")
-	if fuelcnt == 0 and inv:is_empty("fuel") then
+	local fuel = meta:get_int("fuel_ticks")
+	if fuel == 0 and inv:is_empty("fuel") and
+	   machine:get_state(meta) == tubelib.RUNNING then
 		-- no fuel - no work
-		return freezer_stop(pos)
+		return countdown_to_halt(pos, meta, tubelib.FAULT)
 	end
 	local pipe = source == SOURCE_PIPE
 	if source == SOURCE_EMPTY then
@@ -373,73 +356,80 @@ local function on_timer(pos, elapsed)
 			source = SOURCE_PIPE
 		else
 			-- no source, count towards standby
-			if running > 0 then
-				running = running - 1
-				meta:set_int("running", running)
-				if running == 0 then
-					return freezer_idle(pos)
-				end
-			end
-			return true
+			return countdown_to_halt(pos, meta, tubelib.STANDBY)
 		end
-		if running == tubelib.STATE_STANDBY then
+		if machine:get_state(meta) == tubelib.STANDBY then
 			-- something to do, wake up and re-entry
-			return freezer_start(pos)
+			machine:start(pos, meta, true)
+			return false
 		end
 		if inv:is_empty("cur") then
-			-- check if there is space in output, if not - do nothing
+			-- check if there is space in output
 			for _, stack in ipairs(output) do
 				if not inv:room_for_item("dst", stack) then
-					return true
+					return countdown_to_halt(pos, meta, tubelib.BLOCKED)
 				end
+			end
+			if machine:get_state(meta) == tubelib.BLOCKED then
+				-- new free output slots, wake up and re-entry
+				machine:start(pos, meta, true)
+				return false
 			end
 			-- process another water unit
 			if source == SOURCE_BUCKET then
 				local inp = get_water_bucket(inv, "src")
 				if inp:is_empty() then
 					-- oops
-					return freezer_fault(pos)
+					state_meta_reset(pos, meta)
+					machine:fault(pos, meta)
+					return false
 				end
 				inv:add_item("cur", inp)
 			end
 		end
 		meta:set_int("source", source)
-		itemcnt = ICE_TIME_SEC
-		meta:set_int("item_ticks", itemcnt)
+		meta:set_int("item_ticks", ICE_TICKS)
 	else
-		-- continue freezing process - add item tick
-		itemcnt = itemcnt - 1
+		-- continue freezing process
+		if machine:get_state(meta) ~= tubelib.RUNNING then
+			-- exception, should not happen - oops
+			state_meta_reset(pos, meta)
+			machine:fault(pos, meta)
+			return false
+		end
+		-- add item tick
+		local itemcnt = meta:get_int("item_ticks") - 1
 		if itemcnt == 0 then
 			inv:add_item("dst", ItemStack("default:ice 1"))
 			if source == SOURCE_BUCKET then
 				inv:set_stack("cur", 1, ItemStack({}))
 				inv:add_item("dst", ItemStack("bucket:bucket_empty 1"))
 			end
-			meta:set_int("source", SOURCE_EMPTY)
-			itemcnt = ICE_TIME_SEC
+			state_meta_reset(pos, meta)
+			-- item produced, increase aging
+			machine:keep_running(pos, meta, COUNTDOWN_TICKS, 1)
+		else
+			meta:set_int("item_ticks", itemcnt)
 		end
-		meta:set_int("item_ticks", itemcnt)
 		-- consume fuel tick
-		if fuelcnt == 0 then
+		if fuel == 0 then
 			if not inv:is_empty("fuel") then
-				inv:remove_item("fuel",
+					inv:remove_item("fuel",
 					ItemStack("tubelib_addons1:biogas 1"))
-				fuelcnt = BIOGAS_TIME_SEC
+				fuel = BIOGAS_TICKS
 			else
 				-- oops
-				return freezer_fault(pos)
+				state_meta_reset(pos, meta)
+				machine:fault(pos, meta)
+				return false
 			end
 		end
-		fuelcnt = fuelcnt - 1
-		meta:set_int("fuel_ticks", fuelcnt)
+		meta:set_int("fuel_ticks", fuel - 1)
 	end
-	meta:set_int("running", TICKS_TO_SLEEP)
-	meta:set_string("infotext", label .. " " .. number ..
-		": running (water " ..
+	meta:set_int("tubelib_countdown", COUNTDOWN_TICKS)
+	meta:set_string("infotext", label .. " " .. number .. ": running (water " ..
 		(pipe and "from pipe" or "in buckets") .. ")")
-	meta:set_string("formspec", formspec(tubelib.RUNNING, pipe,
-		100 * fuelcnt / BIOGAS_TIME_SEC,
-		100 * (ICE_TIME_SEC - itemcnt) / ICE_TIME_SEC, true))
+	meta:set_string("formspec", formspec(machine, pos, meta))
 	return true
 end
 
@@ -489,38 +479,22 @@ minetest.register_node("biogasmachines:freezer", {
 			     back = 1,
 			     left = 1,
 			     right = 1 },
+	
+	drop = "",
 	can_dig = can_dig,
-	after_dig_node = after_dig_node,
-	on_punch = on_punch,
+
+	after_dig_node = function(pos, oldnode, oldmetadata, digger)
+		machine:after_dig_node(pos, oldnode, oldmetadata, digger)
+		after_dig_node(pos, oldnode, oldmetadata, digger)
+	end,
+
 	on_rotate = screwdriver.disallow,
 	on_timer = on_timer,
 	on_receive_fields = on_receive_fields,
 	allow_metadata_inventory_put = allow_metadata_inventory_put,
 	allow_metadata_inventory_move = allow_metadata_inventory_move,
 	allow_metadata_inventory_take = allow_metadata_inventory_take,
-
-	after_place_node = function(pos, placer, itemstack, pointed_thing)
-		local node = minetest.get_node(pos)
-		local meta = minetest.get_meta(pos)
-		local number = tubelib.add_node(pos, "biogasmachines:freezer")
-		if minetest.get_modpath("pipeworks") then
-			pipeworks.scan_for_pipe_objects(pos)
-		end
-		local inv = meta:get_inventory()
-		inv:set_size('src', INV_H * INV_IN_W)
-		inv:set_size('cur', 1)
-		inv:set_size('fuel', 1)
-		inv:set_size('dst', INV_H * INV_OUT_W)
-		local label = minetest.registered_nodes[node.name].description
-		meta:set_string("number", number)
-		meta:set_string("owner", placer:get_player_name())
-		meta:set_int("running", tubelib.STATE_STOPPED)
-		meta:set_int("source", SOURCE_EMPTY)
-		meta:set_int("fuel_ticks", 0)
-		meta:set_int("item_ticks", 0)
-		meta:set_string("infotext", label .. " " .. number .. ": stopped")
-		meta:set_string("formspec", formspec(tubelib.STOPPED, false, 0, 0, true))
-	end,
+	after_place_node = after_place_node,
 })
 
 minetest.register_node("biogasmachines:freezer_active", {
@@ -573,19 +547,78 @@ minetest.register_node("biogasmachines:freezer_active", {
 			     left = 1,
 			     right = 1 },
 
+	drop = "",
 	can_dig = can_dig,
-	after_dig_node = after_dig_node,
-	on_punch = on_punch,
+
+	after_dig_node = function(pos, oldnode, oldmetadata, digger)
+		machine:after_dig_node(pos, oldnode, oldmetadata, digger)
+		after_dig_node(pos, oldnode, oldmetadata, digger)
+	end,
+
 	on_rotate = screwdriver.disallow,
 	on_timer = on_timer,
 	on_receive_fields = on_receive_fields,
 	allow_metadata_inventory_put = allow_metadata_inventory_put,
 	allow_metadata_inventory_move = allow_metadata_inventory_move,
 	allow_metadata_inventory_take = allow_metadata_inventory_take,
-	drop = "biogasmachines:freezer",
 })
 
-tubelib.register_node("biogasmachines:freezer", { "biogasmachines:freezer_active" }, {
+minetest.register_node("biogasmachines:freezer_defect", {
+	description = "Tubelib Water Freezer",
+	tiles = {
+		-- up, down, right, left, back, front
+		"biogasmachines_freezer_top.png",
+		"biogasmachines_freezer_bottom.png",
+		"biogasmachines_freezer_side.png^tubelib_defect.png",
+		"biogasmachines_freezer_side.png^tubelib_defect.png",
+		"biogasmachines_freezer_side.png^tubelib_defect.png",
+		"biogasmachines_freezer_side.png^tubelib_defect.png"
+	},
+	drawtype = "nodebox",
+	node_box = {
+		type = "fixed",
+		fixed = {
+			{ -0.5, -0.375, -0.5, 0.5, 0.5, 0.5 },
+			{ -0.5, -0.5, -0.5, -0.375, -0.375, -0.375 },
+			{ 0.375, -0.5, -0.5, 0.5, -0.375, -0.375 },
+			{ 0.375, -0.5, 0.375, 0.5, -0.375, 0.5 },
+			{ -0.5, -0.5, 0.375, -0.375, -0.375, 0.5 },
+		}
+	},
+	selection_box = {
+		type = "fixed",
+		fixed = { -0.5, -0.5, -0.5, 0.5, 0.5, 0.5 },
+	},
+
+	paramtype = "light",
+	sunlight_propagates = true,
+	paramtype2 = "facedir",
+	groups = { choppy = 2, cracky = 2, crumbly = 2, not_in_creative_inventory = 1 },
+	is_ground_content = false,
+	sounds = default.node_sound_metal_defaults(),
+
+	pipe_connections = { top = 1,
+			     bottom = 1,
+			     front = 1,
+			     back = 1,
+			     left = 1,
+			     right = 1 },
+	
+	can_dig = can_dig,
+	after_dig_node = after_dig_node,
+	on_rotate = screwdriver.disallow,
+	allow_metadata_inventory_put = allow_metadata_inventory_put,
+	allow_metadata_inventory_move = allow_metadata_inventory_move,
+	allow_metadata_inventory_take = allow_metadata_inventory_take,
+
+	after_place_node = function(pos, placer, itemstack, pointed_thing)
+		after_place_node(pos, placer, itemstack, pointed_thing)
+		machine:defect(pos, minetest.get_meta(pos))
+	end,
+})
+
+tubelib.register_node("biogasmachines:freezer",
+	{ "biogasmachines:freezer_active", "biogasmachines:freezer_defect" }, {
 
 	on_push_item = function(pos, side, item)
 		local meta = minetest.get_meta(pos)
@@ -594,7 +627,7 @@ tubelib.register_node("biogasmachines:freezer", { "biogasmachines:freezer_active
 		elseif item:get_name() == "tubelib_addons1:biogas" then
 			return tubelib.put_item(meta, "fuel", item)
 		end
-	return false
+		return false
 	end,
 
 	on_pull_item = function(pos, side)
@@ -609,17 +642,23 @@ tubelib.register_node("biogasmachines:freezer", { "biogasmachines:freezer_active
 
 	on_recv_message = function(pos, topic, payload)
 		local meta = minetest.get_meta(pos)
-		if topic == "on" then
-                        freezer_start(pos)
-		elseif topic == "off" then
-			freezer_stop(pos)
-		elseif topic == "state" then
-			return tubelib.statestring(meta:get_int("running"))
-		elseif topic == "fuel" then
+		if topic == "fuel" then
 			return tubelib.fuelstate(meta, "fuel")
+		end
+		local resp = machine:on_receive_message(pos, topic, payload)
+		if resp then
+			return resp
 		else
 			return "unsupported"
 		end
+	end,
+
+	on_node_load = function(pos)
+		machine:on_node_load(pos)
+	end,
+
+	on_node_repair = function(pos)
+		return machine:on_node_repair(pos)
 	end,
 })
 
@@ -638,7 +677,7 @@ minetest.register_craft({
 	},
 })
 
-if minetest.get_modpath("unified_inventory") then
+if minetest.get_modpath("unified_inventory") and unified_inventory then
 	unified_inventory.register_craft_type("freezing", {
 		description = "Freezing",
 		icon = 'biogasmachines_freezer_inv_fg.png',

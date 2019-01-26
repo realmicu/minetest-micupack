@@ -3,6 +3,7 @@ bucket
 farming
 tubelib
 tubelib_addons1
+tubelib2
 gravelsieve?
 pipeworks?
 unified_inventory?

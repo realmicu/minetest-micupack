@@ -1,3 +1,39 @@
+make remaining Biogas Machines compatible with Tubelib2 similar to freezer v2:
+	* gasifier
+	* gasfurnace
+	* jetfurnace
+	* compactor
+
+change slprogtools: read "tubelib_number" instead of "number" metadata
+
+tubelib -> tubelib2 tasks:
+
+0. Affected mods: biogasmachines, slprogtools
+
+1. Biogasmachines - change formspec:
+   * parameters are : formspec(self, pos, meta)
+   * all metadata info taken from meta parameter now
+   * button image : self:get_state_button_image(meta)
+   * drop show_icon parameter, always show icon hints
+
+2. 'running' metadata changed to 'tubelib_state'
+
+3. 'number' metadata changed to 'tubelib_number'
+
+4. tubelib.statestring() --> State:get_state_string(meta)
+
+5. Remove machine_(stop|start|standby|fault) helpers
+
+6. countdown_to_idle() -> countdown_to_halt()
+
+7. state_meta_reset() helper
+
+8. Add helpers for can_dig, after_place_node
+
+9. on_receive_fields(), on_recv_message()
+
+10. on_timer: new fuel check; fault and blocked states with re-entry;
+    exception check for item cont. etc
 
 future plans:
 	* Biogas Torch - crafted from glass, biogas and steel ingot (that gives 8)
