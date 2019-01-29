@@ -37,6 +37,10 @@
 	* keep_running function is called every time item is produced
 	  (not every processing tick - function does not accept neither 0
 	  nor fractional values for num_items parameter)
+	* desired_state metadata allows to properly change non-running target
+	  state during transition; when new state differs from old one, timer
+	  is reset so it is guaranteed that each countdown starts from
+	  COUNTDOWN_TICKS
 
 	License: LGPLv2.1+
 	=======================================================================
@@ -224,7 +228,7 @@ local function get_input_item(inv, listname)
 end
 
 -- reset processing data
-local function state_meta_reset(pos, meta, oldstate)
+local function state_meta_reset(pos, meta)
 	meta:set_int("item_ticks", -1)
 	meta:set_string("item_name", "")
 end
@@ -244,10 +248,23 @@ local machine = tubelib.NodeStates:new({
 	standby_ticks = STANDBY_TICKS,
 	has_item_meter = true,
 	aging_factor = 8,
-	on_start = state_meta_reset,
-	on_stop = state_meta_reset,
+	on_start = function(pos, meta, oldstate)
+		meta:set_int("desired_state", tubelib.RUNNING)
+		state_meta_reset(pos, meta)
+	end,
+	on_stop = function(pos, meta, oldstate)
+		meta:set_int("desired_state", tubelib.STOPPED)
+		state_meta_reset(pos, meta)
+	end,
 	formspec_func = formspec,
 })
+
+-- fault function for convenience as there is no on_fault method (yet)
+local function machine_fault(pos, meta)
+	meta:set_int("desired_state", tubelib.FAULT)
+	state_meta_reset(pos, meta)
+	machine:fault(pos, meta)
+end
 
 -- customized version of NodeStates:idle()
 local function countdown_to_halt(pos, meta, target_state)
@@ -257,23 +274,33 @@ local function countdown_to_halt(pos, meta, target_state)
 	   target_state ~= tubelib.FAULT then
 		return true
 	end
-	local countdown = meta:get_int("tubelib_countdown")
-	if countdown > 0 then
-		countdown = countdown - 1
+	if machine:get_state(meta) == tubelib.RUNNING and
+	   meta:get_int("desired_state") ~= target_state then
+		meta:set_int("tubelib_countdown", COUNTDOWN_TICKS)
+		meta:set_int("desired_state", target_state)
+	end
+	local countdown = meta:get_int("tubelib_countdown") - 1
+	if countdown >= -1 then
+		-- we don't need anything less than -1
 		meta:set_int("tubelib_countdown", countdown)
-		if countdown == 0 then
-			if target_state == tubelib.FAULT then
-				state_meta_reset(pos, meta)
-				machine:fault(pos, meta)
-			elseif target_state == tubelib.STOPPED then
-				machine:stop(pos, meta)
-			elseif target_state == tubelib.BLOCKED then
-				machine:blocked(pos, meta)
-			else
-				machine:standby(pos, meta)
-			end
-			return false
+	end
+	if countdown < 0 then
+		if machine:get_state(meta) == target_state then
+			return true
 		end
+		meta:set_int("desired_state", target_state)
+		-- workaround for switching between non-running states
+		meta:set_int("tubelib_state", tubelib.RUNNING)
+		if target_state == tubelib.FAULT then
+			machine_fault(pos, meta)
+		elseif target_state == tubelib.STOPPED then
+			machine:stop(pos, meta)
+		elseif target_state == tubelib.BLOCKED then
+			machine:blocked(pos, meta)
+		else
+			machine:standby(pos, meta)
+		end
+		return false
 	end
 	return true
 end
@@ -383,8 +410,6 @@ local function on_timer(pos, elapsed)
 	local node = minetest.get_node(pos)
 	local meta = minetest.get_meta(pos)
 	local inv = meta:get_inventory()
-	local label = minetest.registered_nodes[node.name].description
-	local number = meta:get_string("tubelib_number")
 	local itemcnt = meta:get_int("item_ticks")
 	local itemname = meta:get_string("item_name")
 	if itemcnt < 0 or itemname == "" then
@@ -406,25 +431,27 @@ local function on_timer(pos, elapsed)
 			local inp = inv:get_stack("cur", 1)
 			inputname = inp:get_name()
 			if not biogas_recipes[inputname] then
-				state_meta_reset(pos, meta)
-				machine:fault(pos, meta)	-- oops
+				machine_fault(pos, meta)	-- oops
 				return false
 			end
 			prodtime = biogas_recipes[inputname].time
 		else
 			-- prepare item, next tick will start processing
+			inv:set_list("dst_copy", inv:get_list("dst"))
 			for i, r in pairs(biogas_recipes) do
-				if inv:contains_item("src", ItemStack(i .. " 1")) and
-				   inv:room_for_item("dst",
-					ItemStack("tubelib_addons1:biogas " ..
-					tostring(r.count))) and
-				   (not r.extra or inv:room_for_item("dst", r.extra))
-				   then
-					inputname = i
-					prodtime = r.time
-					break
+				if inv:contains_item("src", ItemStack(i .. " 1")) then
+					local outp0 = inv:add_item("dst_copy",
+						ItemStack("tubelib_addons1:biogas " .. tostring(r.count)))
+					local outp1 = r.extra and inv:add_item("dst_copy", r.extra) or
+						ItemStack({})
+					if outp0:is_empty() and outp1:is_empty() then
+						inputname = i
+						prodtime = r.time
+						break
+					end
 				end
 			end
+			inv:set_size("dst_copy", 0)
 			if not inputname then
 				-- no space in output
 				return countdown_to_halt(pos, meta, tubelib.BLOCKED)
@@ -435,8 +462,7 @@ local function on_timer(pos, elapsed)
 			end
 			local inp = inv:remove_item("src", ItemStack(inputname .. " 1"))
 			if inp:is_empty() then
-				state_meta_reset(pos, meta)
-				machine:fault(pos, meta)	-- oops
+				machine_fault(pos, meta)	-- oops
 				return false
 			end
 			inv:add_item("cur", inp)
@@ -447,8 +473,7 @@ local function on_timer(pos, elapsed)
 		-- production
 		if machine:get_state(meta) ~= tubelib.RUNNING then
 			-- exception, should not happen - oops
-			state_meta_reset(pos, meta)
-			machine:fault(pos, meta)
+			machine_fault(pos, meta)
 			return false
 		end
 		-- add item tick
@@ -470,6 +495,7 @@ local function on_timer(pos, elapsed)
 		end
 	end
 	meta:set_int("tubelib_countdown", COUNTDOWN_TICKS)
+	meta:set_int("desired_state", tubelib.RUNNING)
 	meta:set_string("formspec", formspec(machine, pos, meta))
 	return true
 end
