@@ -23,19 +23,16 @@
 	Operational info:
 	* machine checks for buckets with water first and if there are none
 	  tries to take water from pipeline
-	* when fuel ends, machine automatically enters fault mode and has to
-	  be manually powered on again after refilling Biogas
-	* fault condition informs operator that there is no fuel in running
-	  machine; when Biogas tank is emptied manually after machine enters
-	  standby or blocked state nothing happens as device is not operating
-	* if output tray is full and no new items can be put there, freezer
-	  changes state to blocked (special standby mode); it will resume
-	  work as soon as there is space in output inventory
+	* if there is nothing to freeze and Biogas tank is empty, machine
+	  switches off automatically
+	* when coolant ends, machine enters fault mode and has to be
+	  manually powered on again after refilling Biogas
 	* if there is nothing to freeze but there is still Biogas in tank,
 	  machine enters standby mode; it will automatically pick up work
-	  as soon as any water source becomes available again; when Biogas
-	  tank is also exhausted in the process, machine signals fault
-	  instead to notify operator than it will not be able to resume work
+	  as soon as any water source becomes available again
+	* if output tray is full and no new items can be put there, machine
+	  changes state to blocked (special standby mode); it will resume
+	  work as soon as there is space in output inventory
 	* there is 1 tick gap between items to unload ice and load internal
 	  water tank or freezing tray; this a design choice to make timer
 	  callback run faster
@@ -59,6 +56,10 @@
 	* keep_running function is called every time item is produced
 	  (not every processing tick - function does not accept neither 0
 	  nor fractional values for num_items parameter)
+	* desired_state metadata allows to properly change non-running target
+	  state during transition; when new state differs from old one, timer
+	  is reset so it is guaranteed that each countdown starts from
+	  COUNTDOWN_TICKS
 
 	License: LGPLv2.1+
 	=======================================================================
@@ -173,7 +174,7 @@ local function get_water_bucket(inv, listname)
 end
 
 -- reset processing data
-local function state_meta_reset(pos, meta, oldstate)
+local function state_meta_reset(pos, meta)
 	meta:set_int("source", SOURCE_EMPTY)
 	meta:set_int("item_ticks", ICE_TICKS)
 end
@@ -193,10 +194,23 @@ local machine = tubelib.NodeStates:new({
 	standby_ticks = STANDBY_TICKS,
 	has_item_meter = true,
 	aging_factor = 8,
-	on_start = state_meta_reset,
-	on_stop = state_meta_reset,
+	on_start = function(pos, meta, oldstate)
+		meta:set_int("desired_state", tubelib.RUNNING)
+		state_meta_reset(pos, meta)
+	end,
+	on_stop = function(pos, meta, oldstate)
+		meta:set_int("desired_state", tubelib.STOPPED)
+		state_meta_reset(pos, meta)
+	end,
 	formspec_func = formspec,
 })
+
+-- fault function for convenience as there is no on_fault method (yet)
+local function machine_fault(pos, meta)
+	meta:set_int("desired_state", tubelib.FAULT)
+	state_meta_reset(pos, meta)
+	machine:fault(pos, meta)
+end
 
 -- customized version of NodeStates:idle()
 local function countdown_to_halt(pos, meta, target_state)
@@ -206,25 +220,46 @@ local function countdown_to_halt(pos, meta, target_state)
 	   target_state ~= tubelib.FAULT then
 		return true
 	end
-	local countdown = meta:get_int("tubelib_countdown")
-	if countdown > 0 then
-		countdown = countdown - 1
+	if machine:get_state(meta) == tubelib.RUNNING and
+	   meta:get_int("desired_state") ~= target_state then
+		meta:set_int("tubelib_countdown", COUNTDOWN_TICKS)
+		meta:set_int("desired_state", target_state)
+	end
+	local countdown = meta:get_int("tubelib_countdown") - 1
+	if countdown >= -1 then
+		-- we don't need anything less than -1
 		meta:set_int("tubelib_countdown", countdown)
-		if countdown == 0 then
-			if target_state == tubelib.FAULT then
-				state_meta_reset(pos, meta)
-				machine:fault(pos, meta)
-			elseif target_state == tubelib.STOPPED then
-				machine:stop(pos, meta)
-			elseif target_state == tubelib.BLOCKED then
-				machine:blocked(pos, meta)
-			else
-				machine:standby(pos, meta)
-			end
-			return false
+	end
+	if countdown < 0 then
+		if machine:get_state(meta) == target_state then
+			return true
 		end
+		meta:set_int("desired_state", target_state)
+		-- workaround for switching between non-running states
+		meta:set_int("tubelib_state", tubelib.RUNNING)
+		if target_state == tubelib.FAULT then
+			machine_fault(pos, meta)
+		elseif target_state == tubelib.STOPPED then
+			machine:stop(pos, meta)
+		elseif target_state == tubelib.BLOCKED then
+			machine:blocked(pos, meta)
+		else
+			machine:standby(pos, meta)
+		end
+		return false
 	end
 	return true
+end
+
+-- countdown to one of two states depending on fuel availability
+local function fuel_countdown_to_halt(pos, meta, target_state_fuel, target_state_empty)
+	local inv = meta:get_inventory()
+	local fuel = meta:get_int("fuel_ticks")
+	if fuel == 0 and inv:is_empty("fuel") then
+		return countdown_to_halt(pos, meta, target_state_empty)
+	else
+		return countdown_to_halt(pos, meta, target_state_fuel)
+	end
 end
 
 --[[
@@ -336,11 +371,6 @@ local function on_timer(pos, elapsed)
 	local number = meta:get_string("tubelib_number")
 	local source = meta:get_int("source")
 	local fuel = meta:get_int("fuel_ticks")
-	if fuel == 0 and inv:is_empty("fuel") and
-	   machine:get_state(meta) == tubelib.RUNNING then
-		-- no fuel - no work
-		return countdown_to_halt(pos, meta, tubelib.FAULT)
-	end
 	local pipe = source == SOURCE_PIPE
 	if source == SOURCE_EMPTY then
 		-- try to start freezing bucket or water from pipe
@@ -355,8 +385,9 @@ local function on_timer(pos, elapsed)
 			-- source: water pipe
 			source = SOURCE_PIPE
 		else
-			-- no source, count towards standby
-			return countdown_to_halt(pos, meta, tubelib.STANDBY)
+			-- no source, count towards standby/stop
+			return fuel_countdown_to_halt(pos, meta,
+				tubelib.STANDBY, tubelib.STOPPED)
 		end
 		if machine:get_state(meta) == tubelib.STANDBY then
 			-- something to do, wake up and re-entry
@@ -365,10 +396,19 @@ local function on_timer(pos, elapsed)
 		end
 		if inv:is_empty("cur") then
 			-- check if there is space in output
+			inv:set_list("dst_copy", inv:get_list("dst"))
+			local is_dst_ok = true
 			for _, stack in ipairs(output) do
-				if not inv:room_for_item("dst", stack) then
-					return countdown_to_halt(pos, meta, tubelib.BLOCKED)
+				local outp = inv:add_item("dst_copy", stack)
+				if not outp:is_empty() then
+					is_dst_ok = false
+					break
 				end
+			end
+			inv:set_size("dst_copy", 0)
+			if not is_dst_ok then
+				return fuel_countdown_to_halt(pos, meta,
+					tubelib.BLOCKED, tubelib.FAULT)
 			end
 			if machine:get_state(meta) == tubelib.BLOCKED then
 				-- new free output slots, wake up and re-entry
@@ -376,16 +416,19 @@ local function on_timer(pos, elapsed)
 				return false
 			end
 			-- process another water unit
+			if fuel == 0 and inv:is_empty("fuel") then
+				return countdown_to_halt(pos, meta, tubelib.FAULT)
+			end
 			if source == SOURCE_BUCKET then
 				local inp = get_water_bucket(inv, "src")
 				if inp:is_empty() then
-					-- oops
-					state_meta_reset(pos, meta)
-					machine:fault(pos, meta)
+					machine_fault(pos, meta)	-- oops
 					return false
 				end
 				inv:add_item("cur", inp)
 			end
+		elseif fuel == 0 and inv:is_empty("fuel") then
+			return countdown_to_halt(pos, meta, tubelib.FAULT)
 		end
 		meta:set_int("source", source)
 		meta:set_int("item_ticks", ICE_TICKS)
@@ -393,11 +436,13 @@ local function on_timer(pos, elapsed)
 		-- continue freezing process
 		if machine:get_state(meta) ~= tubelib.RUNNING then
 			-- exception, should not happen - oops
-			state_meta_reset(pos, meta)
-			machine:fault(pos, meta)
+			machine_fault(pos, meta)
 			return false
 		end
 		-- add item tick
+		if fuel == 0 and inv:is_empty("fuel") then
+			return countdown_to_halt(pos, meta, tubelib.FAULT)
+		end
 		local itemcnt = meta:get_int("item_ticks") - 1
 		if itemcnt == 0 then
 			inv:add_item("dst", ItemStack("default:ice 1"))
@@ -418,15 +463,14 @@ local function on_timer(pos, elapsed)
 					ItemStack("tubelib_addons1:biogas 1"))
 				fuel = BIOGAS_TICKS
 			else
-				-- oops
-				state_meta_reset(pos, meta)
-				machine:fault(pos, meta)
+				machine_fault(pos, meta)	-- oops
 				return false
 			end
 		end
 		meta:set_int("fuel_ticks", fuel - 1)
 	end
 	meta:set_int("tubelib_countdown", COUNTDOWN_TICKS)
+	meta:set_int("desired_state", tubelib.RUNNING)
 	meta:set_string("infotext", label .. " " .. number .. ": running (water " ..
 		(pipe and "from pipe" or "in buckets") .. ")")
 	meta:set_string("formspec", formspec(machine, pos, meta))
