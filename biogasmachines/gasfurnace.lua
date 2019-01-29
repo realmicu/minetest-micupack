@@ -149,7 +149,7 @@ end
 ]]--
 
 -- reset processing data
-local function state_meta_reset(pos, meta, oldstate)
+local function state_meta_reset(pos, meta)
 	meta:set_int("item_ticks", -1)
 	meta:set_int("item_total", -1)
 end
@@ -256,7 +256,7 @@ local function countdown_to_halt(pos, meta, target_state)
 	return true
 end
 
--- countdown to one of two states depending of fuel availability
+-- countdown to one of two states depending on fuel availability
 local function fuel_countdown_to_halt(pos, meta, target_state_fuel, target_state_empty)
 	local inv = meta:get_inventory()
 	local fuel = meta:get_int("fuel_ticks")
