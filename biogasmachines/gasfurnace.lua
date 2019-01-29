@@ -408,8 +408,15 @@ local function on_timer(pos, elapsed)
 			return fuel_countdown_to_halt(pos, meta,
 				tubelib.STANDBY, tubelib.STOPPED)
 		elseif idx == -1 then
-			return fuel_countdown_to_halt(pos, meta,
-				tubelib.BLOCKED, tubelib.FAULT)
+			if machine:get_state(meta) == tubelib.STANDBY then
+				-- adapt behaviour to other biogas machines
+				-- (standby->blocked should go through running)
+				machine:start(pos, meta, true)
+				return false
+			else
+				return fuel_countdown_to_halt(pos, meta,
+					tubelib.BLOCKED, tubelib.FAULT)
+			end
 		end
 		if machine:get_state(meta) == tubelib.STANDBY or
 		   machine:get_state(meta) == tubelib.BLOCKED then
