@@ -3,9 +3,9 @@
 
 	=======================================================================
 	Tubelib Biogas Machines Mod
-	by Micu (c) 2018
+	by Micu (c) 2018, 2019
 
-	Copyright (C) 2018 Michal Cieslakiewicz
+	Copyright (C) 2018, 2019 Michal Cieslakiewicz
 	
 	Biogas-fuelled burner that smelts and cookes like standard furnace.
 	All cooking recipes, including duration, are identical to its stone
@@ -29,9 +29,17 @@
 	  blocking
 
 	Other important features:
-	* if there is nothing to process, machine enters standby mode; it
-	  will automatically pick up work as soon as any valid item is loaded
-	  into input (source) tray
+	* if there is nothing to cook and Biogas tank is empty, machine
+	  switches off automatically
+	* when fuel ends and there are still items to cook, machine enters
+	  fault mode and has to be manually powered on again after refilling
+	  Biogas
+	* if there is nothing to cook but there is still Biogas in tank,
+	  machine enters standby mode; it will automatically pick up work
+	  as soon as a cookable item is loaded into input (source) tray
+	* if output tray is full and no new items can be put there, machine
+	  changes state to blocked (special standby mode); it will resume
+	  work as soon as there is space in output inventory
 	* powering off device during cooking cancels the process; Biogas used
 	  to partially cook item is not recoverable; operation starts from
 	  beginning when device is on again
@@ -41,6 +49,18 @@
 	  all empty
 	* when active, due to high temperature inside, machine becomes a light
 	  source of level 6
+
+	Tubelib v2 implementation info:
+	* device updates itself every tick, so cycle_time must be set to 1
+	  even though production takes longer (start method sets timer to
+	  this value)
+	* keep_running function is called every time item is produced
+	  (not every processing tick - function does not accept neither 0
+	  nor fractional values for num_items parameter)
+	* desired_state metadata allows to properly change non-running target
+	  state during transition; when new state differs from old one, timer
+	  is reset so it is guaranteed that each countdown starts from
+	  COUNTDOWN_TICKS
 
 	License: LGPLv2.1+
 	=======================================================================
@@ -55,10 +75,12 @@
 
 -- Coal block burn time is 370, Gasifier produces 9 Biogas units from it,
 -- so let 1 Biogas unit burn for 40 sec (9 * 40 = 360)
-local BIOGAS_BURN_TIME = 40
+local BIOGAS_TICKS = 40
 -- timing
 local TIMER_TICK_SEC = 1		-- Node timer tick
-local TICKS_TO_SLEEP = 5		-- Tubelib standby
+local STANDBY_TICKS = 4			-- Standby mode timer frequency factor
+local COUNTDOWN_TICKS = 4		-- Ticks to standby
+
 -- machine inventory
 local INV_H = 3				-- Inventory height
 local INV_IN_W = 3			-- Input inventory width
@@ -76,15 +98,14 @@ local fmxy = {
         mid_x = tostring(INV_IN_W + 1),
         inv_out_w = tostring(INV_OUT_W),
         inv_out_x = tostring(INV_IN_W + 2),
-	biogas_time = tostring(BIOGAS_BURN_TIME * TIMER_TICK_SEC)
+	biogas_time = tostring(BIOGAS_TICKS * TIMER_TICK_SEC)
 }
 
--- Parameters:
--- state - tubelib state
--- fuel_percent - biogas used
--- item_percent - item completion
--- show_icons - show image hints (bool)
-local function formspec(state, fuel_percent, item_percent, show_icons)
+-- formspec
+local function formspec(self, pos, meta)
+	local state = meta:get_int("tubelib_state")
+	local fuel_pct = tostring(100 * meta:get_int("fuel_ticks") / BIOGAS_TICKS)
+	local item_pct = tostring(100 * (1 - meta:get_int("item_ticks") / meta:get_int("item_total")))
 	return "size[8,8.25]" ..
 	default.gui_bg ..
 	default.gui_bg_img ..
@@ -93,16 +114,13 @@ local function formspec(state, fuel_percent, item_percent, show_icons)
 	"list[context;cur;" .. fmxy.inv_in_w .. ",0;1,1;]" ..
 	"image[" .. fmxy.inv_in_w ..
 		",1;1,1;biogasmachines_gasfurnace_inv_bg.png^[lowpart:" ..
-		tostring(fuel_percent) ..
-		":biogasmachines_gasfurnace_inv_fg.png]" ..
+		fuel_pct .. ":biogasmachines_gasfurnace_inv_fg.png]" ..
 	"image[" .. fmxy.mid_x .. ",1;1,1;gui_furnace_arrow_bg.png^[lowpart:" ..
-		tostring(item_percent) ..
-		":gui_furnace_arrow_fg.png^[transformR270]" ..
+		item_pct .. ":gui_furnace_arrow_fg.png^[transformR270]" ..
 	"list[context;fuel;" .. fmxy.inv_in_w .. ",2;1,1;]" ..
-	(show_icons and "item_image[" .. fmxy.inv_in_w ..
-		",2;1,1;tubelib_addons1:biogas]" or "") ..
+	"item_image[" .. fmxy.inv_in_w .. ",2;1,1;tubelib_addons1:biogas]" ..
 	"image_button[" .. fmxy.mid_x .. ",2;1,1;" ..
-		tubelib.state_button(state) .. ";button;]" ..
+		self:get_state_button_image(meta) .. ";state_button;]" ..
 	"item_image[2.25,3.25;0.5,0.5;biogasmachines:gasfurnace]" ..
 	"label[2.75,3.25;=]" ..
 	"item_image[3,3.25;0.5,0.5;default:furnace]" ..
@@ -130,89 +148,10 @@ end
 	-------
 ]]--
 
-local function gasfurnace_start(pos)
-	local node = minetest.get_node(pos)
-	local meta = minetest.get_meta(pos)
-	local number = meta:get_string("number")
-	local fuel = meta:get_int("fuel_ticks")
-	local label = minetest.registered_nodes[node.name].description
+-- reset processing data
+local function state_meta_reset(pos, meta, oldstate)
 	meta:set_int("item_ticks", -1)
-	meta:set_int("running", TICKS_TO_SLEEP)
-	meta:set_string("infotext", label .. " " .. number .. ": running")
-	meta:set_string("formspec", formspec(tubelib.RUNNING,
-		100 * fuel / BIOGAS_BURN_TIME, 0, true))
-	node.name = "biogasmachines:gasfurnace_active"
-	minetest.swap_node(pos, node)
-	minetest.get_node_timer(pos):start(TIMER_TICK_SEC)
-	return false
-end
-
-local function gasfurnace_stop(pos)
-	local node = minetest.get_node(pos)
-	local meta = minetest.get_meta(pos)
-	local number = meta:get_string("number")
-	local fuel = meta:get_int("fuel_ticks")
-	local label = minetest.registered_nodes[node.name].description
-	meta:set_int("item_ticks", -1)
-	meta:set_int("running", tubelib.STATE_STOPPED)
-	meta:set_string("infotext", label .. " " .. number .. ": stopped")
-	meta:set_string("formspec", formspec(tubelib.STOPPED,
-		100 * fuel / BIOGAS_BURN_TIME, 0, true))
-	node.name = "biogasmachines:gasfurnace"
-	minetest.swap_node(pos, node)
-        minetest.get_node_timer(pos):stop()
-        return false
-end
-
-local function gasfurnace_idle(pos)
-	local node = minetest.get_node(pos)
-	local meta = minetest.get_meta(pos)
-	local number = meta:get_string("number")
-	local fuel = meta:get_int("fuel_ticks")
-	local label = minetest.registered_nodes[node.name].description
-	meta:set_int("item_ticks", -1)
-	meta:set_int("running", tubelib.STATE_STANDBY)
-	meta:set_string("infotext", label .. " " .. number .. ": standby")
-	meta:set_string("formspec", formspec(tubelib.STANDBY,
-		100 * fuel / BIOGAS_BURN_TIME, 0, true))
-	node.name = "biogasmachines:gasfurnace"
-	minetest.swap_node(pos, node)
-        minetest.get_node_timer(pos):start(TIMER_TICK_SEC * TICKS_TO_SLEEP)
-        return false
-end
-
-local function gasfurnace_fault(pos)
-	local node = minetest.get_node(pos)
-	local meta = minetest.get_meta(pos)
-	local number = meta:get_string("number")
-	local fuel = meta:get_int("fuel_ticks")
-	local label = minetest.registered_nodes[node.name].description
-	meta:set_int("item_ticks", -1)
-	meta:set_int("running", tubelib.STATE_FAULT)
-	meta:set_string("infotext", label .. " " .. number .. ": fault")
-	meta:set_string("formspec", formspec(tubelib.FAULT,
-		100 * fuel / BIOGAS_BURN_TIME, 0, true))
-	node.name = "biogasmachines:gasfurnace"
-	minetest.swap_node(pos, node)
-	minetest.get_node_timer(pos):stop()
-	return false
-end
-
-local function countdown_to_idle_or_stop(pos, stop)
-	local meta = minetest.get_meta(pos)
-	local running = meta:get_int("running")
-	if running > 0 then
-		running = running - 1
-		meta:set_int("running", running)
-		if running == 0 then
-			if stop then
-				return gasfurnace_stop(pos)
-			else
-				return gasfurnace_idle(pos)
-			end
-		end
-	end
-	return true
+	meta:set_int("item_total", -1)
 end
 
 -- Wrapper for 'cooking' get_craft_result() function for specified ItemStack
@@ -246,13 +185,99 @@ local function get_cooking_items(stack)
 end
 
 --[[
+	-------------
+	State machine
+	-------------
+]]--
+
+local machine = tubelib.NodeStates:new({
+	node_name_passive = "biogasmachines:gasfurnace",
+	node_name_active = "biogasmachines:gasfurnace_active",
+	node_name_defect = "biogasmachines:gasfurnace_defect",
+	infotext_name = "Tubelib Biogas Furnace",
+	cycle_time = TIMER_TICK_SEC,
+	standby_ticks = STANDBY_TICKS,
+	has_item_meter = true,
+	aging_factor = 12,
+	on_start = function(pos, meta, oldstate)
+		meta:set_int("desired_state", tubelib.RUNNING)
+		state_meta_reset(pos, meta)
+	end,
+	on_stop = function(pos, meta, oldstate)
+		meta:set_int("desired_state", tubelib.STOPPED)
+		state_meta_reset(pos, meta)
+	end,
+	formspec_func = formspec,
+})
+
+-- fault function for convenience as there is no on_fault method (yet)
+local function machine_fault(pos, meta)
+	meta:set_int("desired_state", tubelib.FAULT)
+	state_meta_reset(pos, meta)
+	machine:fault(pos, meta)
+end
+
+-- customized version of NodeStates:idle()
+local function countdown_to_halt(pos, meta, target_state)
+	if target_state ~= tubelib.STANDBY and
+	   target_state ~= tubelib.BLOCKED and
+	   target_state ~= tubelib.STOPPED and
+	   target_state ~= tubelib.FAULT then
+		return true
+	end
+	if machine:get_state(meta) == tubelib.RUNNING and
+	   meta:get_int("desired_state") ~= target_state then
+		meta:set_int("tubelib_countdown", COUNTDOWN_TICKS)
+		meta:set_int("desired_state", target_state)
+	end
+	local countdown = meta:get_int("tubelib_countdown") - 1
+	if countdown >= -1 then
+		-- we don't need anything less than -1
+		meta:set_int("tubelib_countdown", countdown)
+	end
+	if countdown < 0 then
+		if machine:get_state(meta) == target_state then
+			return true
+		end
+		meta:set_int("desired_state", target_state)
+		-- workaround for switching between non-running states
+		meta:set_int("tubelib_state", tubelib.RUNNING)
+		if target_state == tubelib.FAULT then
+			machine_fault(pos, meta)
+		elseif target_state == tubelib.STOPPED then
+			machine:stop(pos, meta)
+		elseif target_state == tubelib.BLOCKED then
+			machine:blocked(pos, meta)
+		else
+			machine:standby(pos, meta)
+		end
+		return false
+	end
+	return true
+end
+
+-- countdown to one of two states depending of fuel availability
+local function fuel_countdown_to_halt(pos, meta, target_state_fuel, target_state_empty)
+	local inv = meta:get_inventory()
+	local fuel = meta:get_int("fuel_ticks")
+	if fuel == 0 and inv:is_empty("fuel") then
+		return countdown_to_halt(pos, meta, target_state_empty)
+	else
+		return countdown_to_halt(pos, meta, target_state_fuel)
+	end
+end
+
+--[[
 	---------
 	Callbacks
 	---------
 ]]--
 
--- do not allow to dig non-empty machine
+-- do not allow to dig protected or non-empty machine
 local function can_dig(pos, player)
+	if minetest.is_protected(pos, player:get_player_name()) then
+		return false
+	end
 	local meta = minetest.get_meta(pos);
 	local inv = meta:get_inventory()
 	return inv:is_empty("src") and inv:is_empty("dst")
@@ -262,6 +287,21 @@ end
 -- cleanup after digging
 local function after_dig_node(pos, oldnode, oldmetadata, digger)
 	tubelib.remove_node(pos)
+end
+
+-- init machine after placement
+local function after_place_node(pos, placer, itemstack, pointed_thing)
+	local meta = minetest.get_meta(pos)
+	local inv = meta:get_inventory()
+	inv:set_size('src', INV_H * INV_IN_W)
+	inv:set_size('cur', 1)
+	inv:set_size('fuel', 1)
+	inv:set_size('dst', INV_H * INV_OUT_W)
+	meta:set_string("owner", placer:get_player_name())
+	meta:set_int("fuel_ticks", 0)
+	state_meta_reset(pos, meta)
+	local number = tubelib.add_node(pos, "biogasmachines:gasfurnace")
+	machine:node_init(pos, number)
 end
 
 -- validate incoming items
@@ -291,7 +331,7 @@ end
 local function allow_metadata_inventory_move(pos, from_list, from_index, to_list, to_index, count, player)
 	local meta = minetest.get_meta(pos)
 	if to_list == "cur" or
-	   (from_list == "cur" and meta:get_int("running") > 0) then
+	   (from_list == "cur" and machine:get_state(meta) == tubelib.RUNNING) then
 		return 0
 	end
 	local inv = meta:get_inventory()
@@ -306,31 +346,11 @@ local function allow_metadata_inventory_take(pos, listname, index, stack, player
 	end
 	if listname == "cur" then
 		local meta = minetest.get_meta(pos)
-		if meta:get_int("running") > 0 then
+		if machine:get_state(meta) == tubelib.RUNNING then
 			return 0
 		end
 	end
 	return stack:get_count()
-end
-
--- punch machine to see status info
-local function on_punch(pos, node, puncher, pointed_thing)
-	local meta = minetest.get_meta(pos)
-	local player_name = puncher:get_player_name()
-	if meta:get_string("owner") ~= player_name then
-		return false
-	end
-	local msgclr = { ["fault"] = "#FFBFBF",
-			 ["standby"] = "#BFFFFF",
-			 ["stopped"] = "#BFBFFF",
-			 ["running"] = "#BFFFBF"
-	}
-	local state = tubelib.statestring(meta:get_int("running"))
-	minetest.chat_send_player(player_name,
-		minetest.colorize("#FFFF00", "[BiogasFurnace:" ..
-		meta:get_string("number") .. "]") .. " Status is " ..
-		minetest.colorize(msgclr[state], "\"" .. state .. "\""))
-	return true
 end
 
 -- formspec callback
@@ -338,15 +358,7 @@ local function on_receive_fields(pos, formname, fields, player)
 	if minetest.is_protected(pos, player:get_player_name()) then
 		return
 	end
-	local meta = minetest.get_meta(pos)
-	local running = meta:get_int("running")
-	if fields and fields.button then
-		if running > 0 or running == tubelib.STATE_FAULT then
-			gasfurnace_stop(pos)
-		else
-			gasfurnace_start(pos)
-		end
-	end
+	machine:state_button_event(pos, fields)
 end
 
 -- tick-based item production
@@ -354,21 +366,14 @@ local function on_timer(pos, elapsed)
 	local node = minetest.get_node(pos)
 	local meta = minetest.get_meta(pos)
 	local inv = meta:get_inventory()
-	local label = minetest.registered_nodes[node.name].description
-	local number = meta:get_string("number")
-	local running = meta:get_int("running")
-	local itemcnt = meta:get_int("item_ticks")
 	local fuel = meta:get_int("fuel_ticks")
-	if fuel == 0 and inv:is_empty("fuel") then
-		-- no fuel - no work (but wait a little)
-		return countdown_to_idle_or_stop(pos, true)
-	end
 	local recipe = {}
 	local inp
 	if inv:is_empty("cur")  then
 		-- idle and ready, check for something to work with
 		if inv:is_empty("src") then
-			return countdown_to_idle_or_stop(pos)
+			return fuel_countdown_to_halt(pos, meta,
+				tubelib.STANDBY, tubelib.STOPPED)
 		end
 		-- find item to cook/smelt that fits output tray
 		-- (parse list items as first choice is not always the best one)
@@ -380,9 +385,14 @@ local function on_timer(pos, elapsed)
 					recipe.decremented_input = get_cooking_items(inp)
 				if recipe.time > 0 then
 					idx = -1
-					if inv:room_for_item("dst", recipe.output[1]) and
-					   (not recipe.output[2] or
-					    inv:room_for_item("dst", recipe.output[2])) then
+					inv:set_list("dst_copy", inv:get_list("dst"))
+					local outp1 = inv:add_item("dst_copy",
+						recipe.output[1])
+					local outp2 = recipe.output[2] and
+						inv:add_item("dst_copy", recipe.output[2])
+						or ItemStack({})
+					inv:set_size("dst_copy", 0)
+					if outp1:is_empty() and outp2:is_empty() then
 						idx = i
 						break
 					end
@@ -391,62 +401,81 @@ local function on_timer(pos, elapsed)
 		end
 		-- (idx == -2 - nothing cookable found in src)
 		-- (idx == -1 - cookable item in src but no space in dst)
-		if idx < 0 then
-			if idx < -1 then
-				return countdown_to_idle_or_stop(pos)
-			end
-			return true
+		if idx == -2 then
+			return fuel_countdown_to_halt(pos, meta,
+				tubelib.STANDBY, tubelib.STOPPED)
+		elseif idx == -1 then
+			return fuel_countdown_to_halt(pos, meta,
+				tubelib.BLOCKED, tubelib.FAULT)
 		end
-		if meta:get_int("running") == tubelib.STATE_STANDBY then
+		if machine:get_state(meta) == tubelib.STANDBY or
+		   machine:get_state(meta) == tubelib.BLOCKED then
 			-- something to do, wake up and re-entry
-			return gasfurnace_start(pos)
+			machine:start(pos, meta, true)
+			return false
+		end
+		if fuel == 0 and inv:is_empty("fuel") then
+			return countdown_to_halt(pos, meta, tubelib.FAULT)
 		end
 		inv:set_stack("src", idx, recipe.decremented_input)
 		inv:set_stack("cur", 1, recipe.input)
 		meta:set_int("item_ticks", recipe.time)
 		meta:set_int("item_total", recipe.time)
-		itemcnt = recipe.time
 	else
-		-- production tick
+		-- production
 		inp = inv:get_stack("cur", 1)
-		if inp:is_empty() then
-			return gasfurnace_fault(pos)	-- oops
+		if machine:get_state(meta) ~= tubelib.RUNNING or
+		   inp:is_empty() then
+			-- exception, should not happen - oops
+			machine_fault(pos, meta)
+			return false
 		end
-		recipe.time = meta:get_int("item_total")
+		-- production tick
+		if fuel == 0 and inv:is_empty("fuel") then
+			return countdown_to_halt(pos, meta, tubelib.FAULT)
+		end
+		local itemcnt = meta:get_int("item_ticks")
+		local zzz	-- dummy
 		if itemcnt < 0 then
-			itemcnt = recipe.time	-- cook again
+			-- interrupted - cook again
+			recipe.time, zzz, recipe.output = get_cooking_items(inp)
+			meta:set_int("item_total", recipe.time)
+			itemcnt = recipe.time
+		else
+			recipe.output = nil
 		end
 		itemcnt = itemcnt - 1
 		if itemcnt == 0 then
-			local zzz
-			zzz, zzz, recipe.output = get_cooking_items(inp)
+			if not recipe.output then
+				zzz, zzz, recipe.output = get_cooking_items(inp)
+			end
 			for _, i in ipairs(recipe.output) do
 				inv:add_item("dst", i)
 			end
 			inv:set_stack("cur", 1, ItemStack({}))
-			itemcnt = -1
-			recipe.time = -1
+			state_meta_reset(pos, meta)
+			-- item produced, increase aging
+			machine:keep_running(pos, meta, COUNTDOWN_TICKS,
+				inp:get_count())
+		else
+			meta:set_int("item_ticks", itemcnt)
 		end
-		meta:set_int("item_ticks", itemcnt)
 		-- consume fuel tick
 		if fuel == 0 then
 			if not inv:is_empty("fuel") then
 				inv:remove_item("fuel",
 					ItemStack("tubelib_addons1:biogas 1"))
-				fuel = BIOGAS_BURN_TIME
+				fuel = BIOGAS_TICKS
 			else
-				-- oops
-				return gasfurnace_fault(pos)
+				machine_fault(pos, meta)	-- oops
+				return false
 			end
 		end
-		fuel = fuel - 1
-		meta:set_int("fuel_ticks", fuel)
+		meta:set_int("fuel_ticks", fuel - 1)
 	end
-	meta:set_int("running", TICKS_TO_SLEEP)
-	meta:set_string("infotext", label .. " " .. number .. ": running")
-	meta:set_string("formspec", formspec(tubelib.RUNNING,
-		100 * fuel / BIOGAS_BURN_TIME,
-		100 * (recipe.time - itemcnt) / recipe.time, true))
+	meta:set_int("tubelib_countdown", COUNTDOWN_TICKS)
+	meta:set_int("desired_state", tubelib.RUNNING)
+	meta:set_string("formspec", formspec(machine, pos, meta))
 	return true
 end
 
@@ -476,35 +505,21 @@ minetest.register_node("biogasmachines:gasfurnace", {
 	is_ground_content = false,
 	sounds = default.node_sound_metal_defaults(),
 
+	drop = "",
 	can_dig = can_dig,
-	after_dig_node = after_dig_node,
-	on_punch = on_punch,
+
+	after_dig_node = function(pos, oldnode, oldmetadata, digger)
+		machine:after_dig_node(pos, oldnode, oldmetadata, digger)
+		after_dig_node(pos, oldnode, oldmetadata, digger)
+	end,
+
 	on_rotate = screwdriver.disallow,
 	on_timer = on_timer,
 	on_receive_fields = on_receive_fields,
 	allow_metadata_inventory_put = allow_metadata_inventory_put,
 	allow_metadata_inventory_move = allow_metadata_inventory_move,
 	allow_metadata_inventory_take = allow_metadata_inventory_take,
-
-	after_place_node = function(pos, placer, itemstack, pointed_thing)
-		local node = minetest.get_node(pos)
-		local meta = minetest.get_meta(pos)
-		local number = tubelib.add_node(pos, "biogasmachines:gasfurnace")
-		local inv = meta:get_inventory()
-		inv:set_size('src', INV_H * INV_IN_W)
-		inv:set_size('cur', 1)
-		inv:set_size('fuel', 1)
-		inv:set_size('dst', INV_H * INV_OUT_W)
-		local label = minetest.registered_nodes[node.name].description
-		meta:set_string("number", number)
-		meta:set_string("owner", placer:get_player_name())
-		meta:set_int("running", tubelib.STATE_STOPPED)
-		meta:set_int("fuel_ticks", 0)
-		meta:set_int("item_ticks", -1)
-		meta:set_int("item_total", 0)
-		meta:set_string("infotext", label .. " " .. number .. ": stopped")
-		meta:set_string("formspec", formspec(tubelib.STOPPED, 0, 0, true))
-	end,
+	after_place_node = after_place_node,
 })
 
 minetest.register_node("biogasmachines:gasfurnace_active", {
@@ -537,18 +552,57 @@ minetest.register_node("biogasmachines:gasfurnace_active", {
 	light_source = 6,
 	sounds = default.node_sound_metal_defaults(),
 
+	drop = "",
 	can_dig = can_dig,
-	after_dig_node = after_dig_node,
-	on_punch = on_punch,
+
+	after_dig_node = function(pos, oldnode, oldmetadata, digger)
+		machine:after_dig_node(pos, oldnode, oldmetadata, digger)
+		after_dig_node(pos, oldnode, oldmetadata, digger)
+	end,
+
 	on_rotate = screwdriver.disallow,
 	on_timer = on_timer,
 	on_receive_fields = on_receive_fields,
 	allow_metadata_inventory_put = allow_metadata_inventory_put,
 	allow_metadata_inventory_move = allow_metadata_inventory_move,
 	allow_metadata_inventory_take = allow_metadata_inventory_take,
-	drop = "biogasmachines:gasfurnace",
 })
-tubelib.register_node("biogasmachines:gasfurnace", { "biogasmachines:gasfurnace_active" }, {
+
+minetest.register_node("biogasmachines:gasfurnace_defect", {
+	description = "Tubelib Biogas Furnace",
+	tiles = {
+		-- up, down, right, left, back, front
+		"biogasmachines_gasfurnace_top.png",
+		"biogasmachines_bottom.png",
+		"biogasmachines_gasfurnace_side.png^tubelib_defect.png",
+		"biogasmachines_gasfurnace_side.png^tubelib_defect.png",
+		"biogasmachines_gasfurnace_side.png^tubelib_defect.png",
+		"biogasmachines_gasfurnace_side.png^tubelib_defect.png",
+	},
+	drawtype = "nodebox",
+
+	paramtype = "light",
+	sunlight_propagates = true,
+	paramtype2 = "facedir",
+	groups = { choppy = 2, cracky = 2, crumbly = 2, not_in_creative_inventory = 1 },
+	is_ground_content = false,
+	sounds = default.node_sound_metal_defaults(),
+
+	can_dig = can_dig,
+	after_dig_node = after_dig_node,
+	on_rotate = screwdriver.disallow,
+	allow_metadata_inventory_put = allow_metadata_inventory_put,
+	allow_metadata_inventory_move = allow_metadata_inventory_move,
+	allow_metadata_inventory_take = allow_metadata_inventory_take,
+
+	after_place_node = function(pos, placer, itemstack, pointed_thing)
+		after_place_node(pos, placer, itemstack, pointed_thing)
+		machine:defect(pos, minetest.get_meta(pos))
+	end,
+})
+
+tubelib.register_node("biogasmachines:gasfurnace",
+	{ "biogasmachines:gasfurnace_active", "biogasmachines:gasfurnace_defect" }, {
 
 	on_push_item = function(pos, side, item)
 		local meta = minetest.get_meta(pos)
@@ -570,17 +624,23 @@ tubelib.register_node("biogasmachines:gasfurnace", { "biogasmachines:gasfurnace_
 
 	on_recv_message = function(pos, topic, payload)
 		local meta = minetest.get_meta(pos)
-		if topic == "on" then
-                        gasfurnace_start(pos)
-		elseif topic == "off" then
-			gasfurnace_stop(pos)
-		elseif topic == "state" then
-			return tubelib.statestring(meta:get_int("running"))
-		elseif topic == "fuel" then
+		if topic == "fuel" then
 			return tubelib.fuelstate(meta, "fuel")
+		end
+		local resp = machine:on_receive_message(pos, topic, payload)
+		if resp then
+			return resp
 		else
 			return "unsupported"
 		end
+	end,
+
+	on_node_load = function(pos)
+		machine:on_node_load(pos)
+	end,
+
+	on_node_repair = function(pos)
+		return machine:on_node_repair(pos)
 	end,
 })
 
