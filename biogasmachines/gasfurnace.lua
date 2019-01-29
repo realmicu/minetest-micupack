@@ -386,13 +386,16 @@ local function on_timer(pos, elapsed)
 				if recipe.time > 0 then
 					idx = -1
 					inv:set_list("dst_copy", inv:get_list("dst"))
-					local outp1 = inv:add_item("dst_copy",
-						recipe.output[1])
-					local outp2 = recipe.output[2] and
-						inv:add_item("dst_copy", recipe.output[2])
-						or ItemStack({})
+					local is_dst_ok = true
+					for _, stack in ipairs(recipe.output) do
+						local outp = inv:add_item("dst_copy", stack)
+						if not outp:is_empty() then
+							is_dst_ok = false
+							break
+						end
+					end
 					inv:set_size("dst_copy", 0)
-					if outp1:is_empty() and outp2:is_empty() then
+					if is_dst_ok then
 						idx = i
 						break
 					end
