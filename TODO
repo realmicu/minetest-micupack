@@ -1,5 +1,3 @@
-make remaining Biogas Machines compatible with Tubelib2:
-	* compactor
 
 change slprogtools:
 	* read "tubelib_number" instead of "number" metadata
