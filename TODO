@@ -1,3 +1,11 @@
+biogasmachines:
+	* change num_items in all machines to 1 (default) as it is used
+	  mainly for aging
+	* introduce supplementary counters: items in, items out, fuel and ice units
+	  used, pipe connection status, usage: ticks running, ticks standby, ticks
+	  blocked, total ticks etc
+	* copy fuel_countdown function from compactor to other machines with fuel
+	  (unused variable removed)
 
 change slprogtools:
 	* read "tubelib_number" instead of "number" metadata
@@ -6,42 +14,15 @@ change slprogtools:
 change furnacemonitor:
 	* read "tubelib_number" instead of "number" metadata
 
-tubelib -> tubelib2 tasks:
-
-0. Affected mods: biogasmachines, slprogtools, furnacemonitor
-
-1. Biogasmachines - change formspec:
-   * parameters are : formspec(self, pos, meta)
-   * all metadata info taken from meta parameter now
-   * button image : self:get_state_button_image(meta)
-   * drop show_icon parameter, always show icon hints
-
-2. 'running' metadata changed to 'tubelib_state'
-
-3. 'number' metadata changed to 'tubelib_number'
-
-4. tubelib.statestring() --> State:get_state_string(meta)
-
-5. Remove machine_(stop|start|standby|fault) helpers
-
-6. countdown_to_idle() -> countdown_to_halt()
-
-7. state_meta_reset() helper
-
-8. Add helpers for can_dig, after_place_node
-
-9. on_receive_fields(), on_recv_message()
-
-10. on_timer: new fuel check; fault and blocked states with re-entry;
-    exception check for item cont. etc
-
-future plans:
+Future plans:
+	* Biogas Machines Assistant - handheld device that connects to Biogasmachines
+	  and reads, displays and resets device stats (various counters)
 	* Biogas Torch - crafted from glass, biogas and steel ingot (that gives 8)
 	  replacement for default coal torch; should use the same model and mechanics
 	  but modified textures (metal box, blueish light)
 	* Tubelib Chest Indicator - small attachable plate that indicates fill level
 	  of connected Tubelib Chest
-	* Metal Recycler - decomposing device to retrieve metal ingots, Mese shardsxi
+	* Metal Recycler - decomposing device to retrieve metal ingots, Mese shards
 	  and Diamonds from all items and nodes that were crafted from these resources;
 	  device will return random number of ingots and shards - between 1 and craft
 	  quantity; Mese crystals will be converted to shards for calculation purposes;

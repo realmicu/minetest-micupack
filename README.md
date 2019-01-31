@@ -1,4 +1,4 @@
-# MicuPack v1.0
+# MicuPack v2.0
 
 **Minetest modpack by (real)micu, tested with Minetest 0.4.17.1 running Minetest Game**
 
@@ -76,7 +76,7 @@ git clone https://github.com/realmicu/minetest-micupack.git micupack
 * **Biogas Machines** (biogasmachines)
 
   Expands Tubelib (and TechPack) with various machines that use Biogas either as a product
-  or a power source.  *To be expanded.*
+  or a power source. *Machines are compatible with Techpack v2 and use Tubelib2 API.*
 
   Available:
 
@@ -87,7 +87,6 @@ git clone https://github.com/realmicu/minetest-micupack.git micupack
     to one ice cube, in case of pipe network there is no need for any vessels however fresh
     water should be provided via pipelines. Empty buckets are returned as secondary products
     so Freezer can be easily paired with Liquid Sampler and other Tubelib machinery.
-    Punch node to see status.
 
   - **Gasifier**
 
@@ -97,7 +96,6 @@ git clone https://github.com/realmicu/minetest-micupack.git micupack
     ingredients, products and duration. Primary goal is to convert piles of Coal blocks to another
     burnable agent, better suited for use in modern machinery.
     More recipes can be added via simple API function (see source file).
-    As usual, punch node for quick status check.
 
   - **Biogas Furnace**
 
@@ -125,6 +123,5 @@ git clone https://github.com/realmicu/minetest-micupack.git micupack
     blocks to diamonds. Machine consumes Biogas for heating/compacting and Ice for rapid cooling.
     Custom recipes can be added via API function.
 
-  Planned:
+  Future plans - see TODO file.
 
-  - Biogas Torch - Biogas-powered replacement for standard torch (source of light)
