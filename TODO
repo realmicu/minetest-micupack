@@ -1,9 +1,4 @@
 biogasmachines:
-	* change num_items in all machines to 1 (default) as it is used
-	  mainly for aging
-	* introduce supplementary counters: items in, items out, fuel and ice units
-	  used, pipe connection status, usage: ticks running, ticks standby, ticks
-	  blocked, total ticks etc
 	* copy fuel_countdown function from compactor to other machines with fuel
 	  (unused variable removed)
 
@@ -15,8 +10,14 @@ change furnacemonitor:
 	* read "tubelib_number" instead of "number" metadata
 
 Future plans:
-	* Biogas Machines Assistant - handheld device that connects to Biogasmachines
-	  and reads, displays and resets device stats (various counters)
+	* introduce enhanced machine statictics including:
+	  + counters for items in and items out
+	  + biogas used counter
+	  + ice counter for compactor
+	  + pipe connection status for freezer
+	  + usage: ticks running, ticks standby, ticks blocked, total ticks etc
+	  and evaluate possible expansion of SaferLua controller '$commands' with
+	  functions to read and reset above fields
 	* Biogas Torch - crafted from glass, biogas and steel ingot (that gives 8)
 	  replacement for default coal torch; should use the same model and mechanics
 	  but modified textures (metal box, blueish light)

@@ -41,6 +41,9 @@
 	  state during transition; when new state differs from old one, timer
 	  is reset so it is guaranteed that each countdown starts from
 	  COUNTDOWN_TICKS
+	* num_items in keep_running method is set to 1 (default value);
+	  machine aging is controlled by aging_factor solely; tubelib item
+	  counter is used to count production iterations not actual items
 
 	License: LGPLv2.1+
 	=======================================================================
@@ -489,7 +492,7 @@ local function on_timer(pos, elapsed)
 			inv:set_stack("cur", 1, ItemStack({}))
 			state_meta_reset(pos, meta)
 			-- item produced, increase aging
-			machine:keep_running(pos, meta, COUNTDOWN_TICKS, 1)
+			machine:keep_running(pos, meta, COUNTDOWN_TICKS)
 		else
 			meta:set_int("item_ticks", itemcnt)
 		end
