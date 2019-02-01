@@ -1,10 +1,6 @@
 
 change slprogtools:
-	* read "tubelib_number" instead of "number" metadata
 	* add support for 'func' code
-
-change furnacemonitor:
-	* read "tubelib_number" instead of "number" metadata
 
 Future plans:
 	* introduce enhanced machine statictics including:

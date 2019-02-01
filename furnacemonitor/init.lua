@@ -2,7 +2,7 @@
 
 	=================================================
 	Furnace Monitor
-	by Micu (c) 2018
+	by Micu (c) 2018, 2019
 
 	This file contains:
 	* Furnace Monitor
@@ -50,23 +50,22 @@ furnacemonitor = {}
 -- furnace smelting items = "running"
 -- furnace burning without items = "standby"
 local function get_tubelib_furnace_state(monitor_pos, monitor_node)
-	local monnode = monitor_node
-	if monnode == nil then monnode = minetest.get_node(monitor_pos) end
+	local monnode = monitor_node or minetest.get_node(monitor_pos)
 	local pos = vector.add(monitor_pos,
 		minetest.facedir_to_dir(monnode.param2))
 	local node = minetest.get_node(pos)
 	local meta = minetest.get_meta(pos)
 	if node.name == "default:furnace" then
-		return tubelib.statestring(tubelib.STATE_STOPPED)
+		return tubelib.StateStrings[tubelib.STOPPED]
 	elseif node.name == "default:furnace_active" then
 		local inv = meta:get_inventory()
 		if inv:is_empty("src") then
-			return tubelib.statestring(tubelib.STATE_STANDBY)
+			return tubelib.StateStrings[tubelib.STANDBY]
 		else
-			return tubelib.statestring(tubelib.STATE_RUNNING)
+			return tubelib.StateStrings[tubelib.RUNNING]
 		end
 	end
-	return tubelib.statestring(tubelib.STATE_FAULT)
+	return tubelib.StateStrings[tubelib.FAULT]
 end
 
 --[[
@@ -140,7 +139,7 @@ tubelib.register_node("furnacemonitor:furnacemonitor", {}, {
 		if topic == "state" then
 			return get_tubelib_furnace_state(pos)
 		else
-			return "not supported"
+			return "unsupported"
 		end
 	end,
 })
