@@ -262,8 +262,7 @@ end
 -- countdown to one of two states depending on fuel availability
 local function fuel_countdown_to_halt(pos, meta, target_state_fuel, target_state_empty)
 	local inv = meta:get_inventory()
-	local fuel = meta:get_int("fuel_ticks")
-	if fuel == 0 and inv:is_empty("fuel") then
+	if meta:get_int("fuel_ticks") == 0 and inv:is_empty("fuel") then
 		return countdown_to_halt(pos, meta, target_state_empty)
 	else
 		return countdown_to_halt(pos, meta, target_state_fuel)
