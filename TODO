@@ -1,7 +1,4 @@
 
-change slprogtools:
-	* add support for 'func' code
-
 Future plans:
 	* introduce enhanced machine statictics including:
 	  + counters for items in and items out

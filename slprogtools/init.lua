@@ -27,10 +27,6 @@ slprogtools = {}
 	---------
 ]]--
 
--- saferlua ctrl initial texts (should not be empty to not confuse metadata)
-local init_empty = "--"
-local loop_empty = "--"
-local note_empty = "--"
 -- default programmer fields
 local def_marker = "--@CONF@"
 local def_this_var = "THIS"
@@ -72,9 +68,10 @@ Functions (tabs):
 
 * memory
   Memory Copier mode. Allows to transfer 'init',
-  'loop' and 'notes' sections between device and
-  connected SaferLua Controller. Checkboxes allow
-  to select on which memory areas device operates.
+  'func', 'loop' and 'notes' sections between
+  device and connected SaferLua Controller.
+  Checkboxes allow to select on which memory
+  areas device operates.
 
 * program
   Programmer mode. In many scenarios, SaferLua
@@ -153,53 +150,58 @@ local function formspec_copier(tool, tubelib_id)
 	local desc = tool_def.description
 	local tool_meta = tool:get_meta()
 	local init_flag = tool_meta:get_int("init_flag") ~= 0
+	local func_flag = tool_meta:get_int("func_flag") ~= 0
 	local loop_flag = tool_meta:get_int("loop_flag") ~= 0
 	local note_flag = tool_meta:get_int("note_flag") ~= 0
 	local ro_flag = tool_meta:get_int("ro_flag") ~= 0
 	local label = tool_meta:get_string("description") or ""
 	local init_len = string.len(tool_meta:get_string("init_code"))
+	local func_len = string.len(tool_meta:get_string("func_code"))
 	local loop_len = string.len(tool_meta:get_string("loop_code"))
 	local note_len = string.len(tool_meta:get_string("note_text"))
-	return "size[7,4.75,true]"..
+	return "size[7,5.25,true]"..
 	"position[0.5,0.25]" ..
 	"no_prepend[]" ..
 	"label[1.5,0;" .. minetest.colorize("#FFFF00", desc) .. "]" ..
 	"field[0.75,1.25;4.5,0.5;text_label;;" .. label .. "]" ..
-	"label[0.5,1.75;" ..
-		minetest.colorize("#00FFFF",
-		"Connected to controller " .. tubelib_id) .. "]" ..
+	"label[0.5,1.75;Connected to controller " .. msg_C ..
+		tubelib_id .. msg_W .. "]" ..
 	"checkbox[0.5,2.25;init_flag;include " .. msg_M .. "init()" .. msg_W ..
 		" code (size: " .. tostring(init_len) .. ");" ..
 		tostring(init_flag) .. "]" ..
-	"checkbox[0.5,2.75;loop_flag;include " .. msg_M .. "loop()" .. msg_W ..
+	"checkbox[0.5,2.75;func_flag;include " .. msg_M .. "func" .. msg_W ..
+		" code (size: " .. tostring(func_len) .. ");" ..
+		tostring(func_flag) .. "]" ..
+	"checkbox[0.5,3.25;loop_flag;include " .. msg_M .. "loop()" .. msg_W ..
 		" code (size: " .. tostring(loop_len) .. ");" ..
 		tostring(loop_flag) .. "]" ..
-	"checkbox[0.5,3.25;note_flag;include " .. msg_M .. "notes" .. msg_W ..
+	"checkbox[0.5,3.75;note_flag;include " .. msg_M .. "notes" .. msg_W ..
 		" text (size: " .. tostring(note_len) .. ");" ..
 		tostring(note_flag) .. "]" ..
-	"checkbox[0.5,3.75;ro_flag;read only (archive mode);" ..
+	"checkbox[0.5,4.25;ro_flag;read only (archive mode);" ..
 		tostring(ro_flag) .. "]" ..
 	"button_exit[5,0.75;1.5,1;label;Label]" ..
-	"button_exit[5,1.5;1.5,1;clear;Clear]" ..
-	"button_exit[5,2.25;1.5,1;download;Download]" ..
-	"button_exit[5,3;1.5,1;upload;Upload]" ..
-	"button_exit[5,3.75;1.5,1;exit;Exit]"
+	"button_exit[5,2;1.5,1;clear;Clear]" ..
+	"button_exit[5,2.75;1.5,1;download;Download]" ..
+	"button_exit[5,3.5;1.5,1;upload;Upload]" ..
+	"button_exit[5,4.25;1.5,1;exit;Exit]"
 end
 
 local function formspec_programmer_info(tool, slc_meta)
 	local slc_id = slc_meta:get_string("number")
-	local slc_state = slc_meta:get_int("state") == tubelib.STOPPED
-		and "stopped" or "running"
+	local slc_state = tubelib.StateStrings[slc_meta:get_int("state")]
 	local slc_init_len = string.len(slc_meta:get_string("init"))
+	local slc_func_len = string.len(slc_meta:get_string("func"))
 	local slc_loop_len = string.len(slc_meta:get_string("loop"))
 	local slc_note_len = string.len(slc_meta:get_string("notes"))
 	return "tabheader[0,1.75;tab;info,memory,program,security,help;1;false;false]" ..
-	"label[0,1.75;Connected to controller " .. msg_C ..
-		slc_id .. msg_W .. "]" ..
-	"label[0,2.25;Controller is " .. msg_C ..
-		slc_state .. msg_W .. "]" ..
-	"label[0,3;Code size of " .. msg_M .. "init()" .. msg_W ..
+	"label[0,1.75;Connected to controller " .. msg_C .. slc_id ..
+		msg_W .. " (" .. msg_C .. slc_state .. msg_W .. ")]" ..
+	"label[0,2.5;Code size of " .. msg_M .. "init()" .. msg_W ..
 		" section is " .. msg_C .. tostring(slc_init_len) .. msg_W ..
+		" bytes]" ..
+	"label[0,3;Code size of " .. msg_M .. "func" .. msg_W ..
+		" section is " .. msg_C .. tostring(slc_func_len) .. msg_W ..
 		" bytes]" ..
 	"label[0,3.5;Code size of " .. msg_M .. "loop()" .. msg_W ..
 		" section is " .. msg_C .. tostring(slc_loop_len) .. msg_W ..
@@ -213,19 +215,24 @@ end
 local function formspec_programmer_mem(tool, slc_meta)
 	local tool_meta = tool:get_meta()
 	local init_flag = tool_meta:get_int("init_flag") ~= 0
+	local func_flag = tool_meta:get_int("func_flag") ~= 0
 	local loop_flag = tool_meta:get_int("loop_flag") ~= 0
 	local note_flag = tool_meta:get_int("note_flag") ~= 0
 	local init_len = string.len(tool_meta:get_string("init_code"))
+	local func_len = string.len(tool_meta:get_string("func_code"))
 	local loop_len = string.len(tool_meta:get_string("loop_code"))
 	local note_len = string.len(tool_meta:get_string("note_text"))
 	return "tabheader[0,1.75;tab;info,memory,program,security,help;2;false;false]" ..
 	"checkbox[0,2;init_flag;include " .. msg_M .. "init()" .. msg_W ..
 		" code (" .. msg_C .. tostring(init_len) .. msg_W ..
 		" bytes);" .. tostring(init_flag) .. "]" ..
-	"checkbox[0,2.5;loop_flag;include " .. msg_M .. "loop()" .. msg_W ..
+	"checkbox[0,2.5;func_flag;include " .. msg_M .. "func" .. msg_W ..
+		" code (" .. msg_C .. tostring(func_len) .. msg_W ..
+		" bytes);" .. tostring(func_flag) .. "]" ..
+	"checkbox[0,3;loop_flag;include " .. msg_M .. "loop()" .. msg_W ..
 		" code (" .. msg_C .. tostring(loop_len) .. msg_W ..
 		" bytes);" .. tostring(loop_flag) .. "]" ..
-	"checkbox[0,3;note_flag;include " .. msg_M .. "notes" .. msg_W ..
+	"checkbox[0,3.5;note_flag;include " .. msg_M .. "notes" .. msg_W ..
 		" text (" .. msg_C .. tostring(note_len) .. msg_W ..
 		" bytes);" .. tostring(note_flag) .. "]" ..
 	"button_exit[5,2.25;1.5,0;clear;Clear]" ..
@@ -326,6 +333,10 @@ local function init_metadata_copier(player, tool)
 		tool_meta:set_int("init_flag", 1)
 		tool_upd = true
 	end
+	if not metatable.fields["func_flag"] then
+		tool_meta:set_int("func_flag", 1)
+		tool_upd = true
+	end
 	if not metatable.fields["loop_flag"] then
 		tool_meta:set_int("loop_flag", 1)
 		tool_upd = true
@@ -335,15 +346,19 @@ local function init_metadata_copier(player, tool)
 		tool_upd = true
 	end
 	if not metatable.fields["init_code"] then
-		tool_meta:set_string("init_code", init_empty)
+		tool_meta:set_string("init_code", "")
+		tool_upd = true
+	end
+	if not metatable.fields["func_code"] then
+		tool_meta:set_string("func_code", "")
 		tool_upd = true
 	end
 	if not metatable.fields["loop_code"] then
-		tool_meta:set_string("loop_code", loop_empty)
+		tool_meta:set_string("loop_code", "")
 		tool_upd = true
 	end
 	if not metatable.fields["note_text"] then
-		tool_meta:set_string("note_text", note_empty)
+		tool_meta:set_string("note_text", "")
 		tool_upd = true
 	end
 	-- all done
@@ -421,6 +436,11 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 		if play_snd then play_click(player_name) end
 		tool_upd = true
 	end
+	if fields.func_flag then
+		tool_meta:set_int("func_flag", fields.func_flag == "true" and 1 or 0)
+		if play_snd then play_click(player_name) end
+		tool_upd = true
+	end
 	if fields.loop_flag then
 		tool_meta:set_int("loop_flag", fields.loop_flag == "true" and 1 or 0)
 		if play_snd then play_click(player_name) end
@@ -485,22 +505,28 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 			return true
 		end
 		local init_flag = tool_meta:get_int("init_flag") ~= 0
+		local func_flag = tool_meta:get_int("func_flag") ~= 0
 		local loop_flag = tool_meta:get_int("loop_flag") ~= 0
 		local note_flag = tool_meta:get_int("note_flag") ~= 0
 		local clr_list = {}
 		if fields.clear then
 			if init_flag then
-				tool_meta:set_string("init_code", init_empty)
+				tool_meta:set_string("init_code", "")
 				clr_list[#clr_list + 1] =  "init"
 				tool_upd = true
 			end
+			if func_flag then
+				tool_meta:set_string("func_code", "")
+				clr_list[#clr_list + 1] = "func"
+				tool_upd = true
+			end
 			if loop_flag then
-				tool_meta:set_string("loop_code", loop_empty)
+				tool_meta:set_string("loop_code", "")
 				clr_list[#clr_list + 1] = "loop"
 				tool_upd = true
 			end
 			if note_flag then
-				tool_meta:set_string("note_text", note_empty)
+				tool_meta:set_string("note_text", "")
 				clr_list[#clr_list + 1] = "notes"
 				tool_upd = true
 			end
@@ -510,12 +536,19 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 				"Memory cleared (" ..
 				table.concat(clr_list, ", ") .. ")")
 		elseif fields.download then
-			local init_len, loop_len, note_len = -1, -1, -1
+			local init_len, func_len, loop_len, note_len = -1, -1, -1, -1
 			if init_flag then
 				tool_meta:set_string("init_code",
 					slc_meta:get_string("init"))
 				init_len = string.len(
 					tool_meta:get_string("init_code"))
+				tool_upd = true
+			end
+			if func_flag then
+				tool_meta:set_string("func_code",
+					slc_meta:get_string("func"))
+				func_len = string.len(
+					tool_meta:get_string("func_code"))
 				tool_upd = true
 			end
 			if loop_flag then
@@ -538,13 +571,15 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 				"Download from " .. msg_C .. slc_id .. msg_W ..
 				" completed (init " .. msg_C ..
 				(init_len < 0 and "skipped" or tostring(init_len) ..
+				msg_W .. " bytes") .. msg_W .. ", func " .. msg_C ..
+				(func_len < 0 and "skipped" or tostring(func_len) ..
 				msg_W .. " bytes") .. msg_W .. ", loop " .. msg_C ..
 				(loop_len < 0 and "skipped" or tostring(loop_len) ..
 				msg_W .. " bytes") .. msg_W .. ", notes " .. msg_C ..
 				(note_len < 0 and "skipped" or tostring(note_len) ..
 				msg_W .. " bytes)"))
 		elseif fields.upload then
-			local init_len, loop_len, note_len = -1, -1, -1
+			local init_len, func_len, loop_len, note_len = -1, -1, -1, -1
 			if slc_meta:get_int("state") ~= tubelib.STOPPED then
 				play_beep_err(player_name)
 				minetest.chat_send_player(player_name,
@@ -557,6 +592,12 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 					tool_meta:get_string("init_code"))
 				init_len = string.len(
 					slc_meta:get_string("init"))
+			end
+			if func_flag then
+				slc_meta:set_string("func",
+					tool_meta:get_string("func_code"))
+				func_len = string.len(
+					slc_meta:get_string("func"))
 			end
 			if loop_flag then
 				slc_meta:set_string("loop",
@@ -576,6 +617,8 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 				"Upload to " .. msg_C .. slc_id .. msg_W ..
 				" completed (init " .. msg_C ..
 				(init_len < 0 and "skipped" or tostring(init_len) ..
+				msg_W .. " bytes") .. msg_W .. ", func " .. msg_C ..
+				(func_len < 0 and "skipped" or tostring(func_len) ..
 				msg_W .. " bytes") .. msg_W .. ", loop " .. msg_C ..
 				(loop_len < 0 and "skipped" or tostring(loop_len) ..
 				msg_W .. " bytes") .. msg_W .. ", notes " .. msg_C ..
