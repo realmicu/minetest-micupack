@@ -51,26 +51,30 @@ git clone https://github.com/realmicu/minetest-micupack.git micupack
   code upload/rewrite please change active tab on SaferLua Controller to 'outp' or 'help'.*
 
 
-* **Furnace Monitor** (furnacemonitor)
+* **Smartline Modules** (slmodules)
 
-  This simple device allows to monitor Minetest Game standard furnace with Tubelib/Smartline
-  devices that are capable of reading Tubelib node state (like SaferLua Controllers etc).
-  It gets standard 4-digit Tubelib ID number and can be referred like any other compatible
-  read-only node.
-  Monitor checks attached node only when status is requested so it does not consume CPU
-  resources when idle (no timers).
+  This mod adds following Smartline-compatible nodes:
 
-  Placement: place on any side of a furnace, make sure back plate of device has contact with
-  monitored node. In case of wrong orientation use screwdriver.
+  - **Furnace Monitor**
 
-  Status:
+    This simple device allows to monitor Minetest Game standard furnace with Tubelib/Smartline
+    devices that are capable of reading Tubelib node state (like SaferLua Controllers etc).
+    It gets standard 4-digit Tubelib ID number and can be referred like any other compatible
+    read-only node.
+    Monitor checks attached node only when status is requested so it does not consume CPU
+    resources when idle (no timers).
 
-  - "fault" - monitor is not placed on a furnace
-  - "stopped" - furnace is not smelting/cooking
-  - "running" - furnace is smelting/cooking items
-  - "standby" - furnace is burning fuel but there are no items loaded
+    Placement: place on any side of a furnace, make sure back plate of device has contact with
+    monitored node. In case of wrong orientation use screwdriver.
 
-  Punch node to see current status.
+    Status:
+
+    - "fault" - monitor is not placed on a furnace
+    - "stopped" - furnace is not smelting/cooking
+    - "running" - furnace is smelting/cooking items
+    - "standby" - furnace is burning fuel but there are no items loaded
+
+    Punch node to see current status.
 
 
 * **Biogas Machines** (biogasmachines)
