@@ -708,7 +708,7 @@ minetest.register_craft({
 	output = "biogasmachines:gasifier",
 	recipe = {
 		{ "default:steelblock", "default:glass", "default:steelblock" },
-		{ "default:mese_crystal", "default:gold_ingot", "tubelib:tube1" },
+		{ "default:mese_crystal", "default:gold_ingot", "tubelib:tubeS" },
 		{ "group:wood", "default:gold_ingot", "group:wood" },
 	},
 })

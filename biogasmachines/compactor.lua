@@ -794,7 +794,7 @@ minetest.register_craft({
 	output = "biogasmachines:compactor",
 	recipe = {
 		{ "default:steelblock", "default:obsidian_block", "default:steelblock" },
-		{ "default:mese_crystal", "default:diamondblock", "tubelib:tube1" },
+		{ "default:mese_crystal", "default:diamondblock", "tubelib:tubeS" },
 		{ "group:wood", "default:obsidian_block", "group:wood" },
 	},
 })

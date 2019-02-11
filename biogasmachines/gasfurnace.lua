@@ -665,7 +665,7 @@ minetest.register_craft({
 	output = "biogasmachines:gasfurnace",
 	recipe = {
 		{ "default:steelblock", "default:steel_ingot", "default:steelblock" },
-		{ "default:mese_crystal", "default:furnace", "tubelib:tube1" },
+		{ "default:mese_crystal", "default:furnace", "tubelib:tubeS" },
 		{ "group:wood", "default:steel_ingot", "group:wood" },
 	},
 })

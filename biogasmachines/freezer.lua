@@ -718,7 +718,7 @@ minetest.register_craft({
 	output = "biogasmachines:freezer",
 	recipe = {
 		{ "default:steelblock", "default:glass", "default:steelblock" },
-		{ "default:mese_crystal", "bucket:bucket_empty", "tubelib:tube1" },
+		{ "default:mese_crystal", "bucket:bucket_empty", "tubelib:tubeS" },
 		{ "group:wood", "default:copper_ingot", "group:wood" },
 	},
 })
