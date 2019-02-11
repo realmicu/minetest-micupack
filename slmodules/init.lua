@@ -176,6 +176,6 @@ minetest.register_lbm({
 	},
 	run_at_every_load = true,
 	action = function(pos, node)
-		minetest.swap_node(pos, "slmodules:furnacemonitor")
+		minetest.swap_node(pos, { name = "slmodules:furnacemonitor" })
 	end
 })
