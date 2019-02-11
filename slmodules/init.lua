@@ -1,11 +1,13 @@
 --[[
 
 	=================================================
-	Furnace Monitor
+	SmartLine Modules
 	by Micu (c) 2018, 2019
 
 	This file contains:
 	* Furnace Monitor
+
+	Furnace Monitor:
 
 	Monitor Minetest Game standard furnace with
 	Tubelib/Smartline devices like Controllers.
@@ -36,7 +38,7 @@
 ]]--
 
 
-furnacemonitor = {}
+slmodules = {}
 
 --[[
 	-------
@@ -74,7 +76,7 @@ end
 	-----------------
 ]]--
 
-minetest.register_node("furnacemonitor:furnacemonitor", {
+minetest.register_node("slmodules:furnacemonitor", {
 	description = "SmartLine Furnace Monitor",
 	inventory_image = "furnacemonitor_inventory.png",
 	tiles = {
@@ -97,7 +99,7 @@ minetest.register_node("furnacemonitor:furnacemonitor", {
 
 	after_place_node = function(pos, placer, itemstack, pointed_thing)
 		local meta = minetest.get_meta(pos)
-		local number = tubelib.add_node(pos, "furnacemonitor:furnacemonitor")
+		local number = tubelib.add_node(pos, "slmodules:furnacemonitor")
 		meta:set_string("number", number)
 		meta:set_string("infotext", "Smartline Furnace Monitor " .. number)
 		meta:set_string("owner", placer:get_player_name())
@@ -134,7 +136,7 @@ minetest.register_node("furnacemonitor:furnacemonitor", {
 	sounds = default.node_sound_metal_defaults(),
 })
 
-tubelib.register_node("furnacemonitor:furnacemonitor", {}, {
+tubelib.register_node("slmodules:furnacemonitor", {}, {
 	on_recv_message = function(pos, topic, payload)
 		if topic == "state" then
 			return get_tubelib_furnace_state(pos)
@@ -151,11 +153,29 @@ tubelib.register_node("furnacemonitor:furnacemonitor", {}, {
 ]]--
 
 minetest.register_craft({
-	output = "furnacemonitor:furnacemonitor",
+	output = "slmodules:furnacemonitor",
 	type = "shaped",
 	recipe = {
 		{"", "default:tin_ingot", ""},
 		{"dye:blue", "default:copper_ingot", "tubelib:wlanchip"},
 		{"", "dye:black", ""},
 	},
+})
+
+--[[
+	---------------------
+	FurnaceMonitor update
+	---------------------
+]]--
+
+minetest.register_lbm({
+	label = "FurnaceMonitor update",
+	name = "slmodules:furnacemonitor_update",
+	nodenames = {
+		"furnacemonitor:furnacemonitor",
+	},
+	run_at_every_load = true,
+	action = function(pos, node)
+		minetest.swap_node(pos, "slmodules:furnacemonitor")
+	end
 })
