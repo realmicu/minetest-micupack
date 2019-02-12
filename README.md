@@ -1,4 +1,4 @@
-# MicuPack v2.0
+# MicuPack v2.2
 
 **Minetest modpack by (real)micu, tested with Minetest 0.4.17.1 running Minetest Game**
 
@@ -75,6 +75,38 @@ git clone https://github.com/realmicu/minetest-micupack.git micupack
     - "standby" - furnace is burning fuel but there are no items loaded
 
     Punch node to see current status.
+
+  - **Digital Switch**
+
+    Configurable multi-state switch with one-digit simple decimal LCD display.
+    Its purpose is to enhance SaferLua Controller functionality by providing selectable input
+    via standard Tubelib messaging. SL Controller can be programmed to perform different
+    actions depending on value selected on digital panel.
+    Right after placement, panel is in setup mode and should be configured before use; after
+    successful configration, setup screen is no longer accessible. To change parameters again,
+    simply collect and redeploy node.
+
+    Configuration options:
+
+    - destination number(s) of Controller(s) to send events to (optional, if not set - no
+      messages are sent)
+    - set of accepted digits (should be at least one digit or device refuses to start)
+    - direction of value change ("up" means increase, "down" decrease); values do wrap around
+
+    Switch value setting is changed with right click, like standard Tubelib buttons.
+
+    To get value currently set on panel, query its status using SaferLua $get_status(NUMBER)
+    function which returns "0" through "9" or "off" if panel is unconfigured. When panel is
+    connected to Controller(s), switch sends "on" events every time it is changed (please note
+    Controller limit of one event per second!)
+
+    Status:
+
+    - "0" .. "9" - current value
+    - "off" - placed but not yet configured
+
+    Events (optional):
+    - "on" - on digit change
 
 
 * **Biogas Machines** (biogasmachines)
