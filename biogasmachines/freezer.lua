@@ -192,7 +192,7 @@ local machine = tubelib.NodeStates:new({
 	node_name_passive = "biogasmachines:freezer",
 	node_name_active = "biogasmachines:freezer_active",
 	node_name_defect = "biogasmachines:freezer_defect",
-	infotext_name = "Tubelib Water Freezer",
+	infotext_name = "Water Freezer",
 	cycle_time = TIMER_TICK_SEC,
 	standby_ticks = STANDBY_TICKS,
 	has_item_meter = true,
@@ -369,7 +369,6 @@ local function on_timer(pos, elapsed)
 	local node = minetest.get_node(pos)
 	local meta = minetest.get_meta(pos)
 	local inv = meta:get_inventory()
-	local label = minetest.registered_nodes[node.name].description
 	local number = meta:get_string("tubelib_number")
 	local source = meta:get_int("source")
 	local fuel = meta:get_int("fuel_ticks")
@@ -473,7 +472,7 @@ local function on_timer(pos, elapsed)
 	end
 	meta:set_int("tubelib_countdown", COUNTDOWN_TICKS)
 	meta:set_int("desired_state", tubelib.RUNNING)
-	meta:set_string("infotext", label .. " " .. number .. ": running (water " ..
+	meta:set_string("infotext", "Water Freezer " .. number .. ": running (water " ..
 		(pipe and "from pipe" or "in buckets") .. ")")
 	meta:set_string("formspec", formspec(machine, pos, meta))
 	return true
