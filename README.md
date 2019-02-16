@@ -1,4 +1,4 @@
-# MicuPack v2.2
+# MicuPack v2.3
 
 **Minetest modpack by (real)micu, tested with Minetest 0.4.17.1 running Minetest Game**
 
@@ -107,6 +107,35 @@ git clone https://github.com/realmicu/minetest-micupack.git micupack
 
     Events (optional):
     - "on" - on digit change
+
+  - **AutoSieve Sensor**
+
+    This node is a sensor pad for Techpack Automated Gravel Sieve. Although AutoSieve
+    can interact with Tubelib machinery like any other Techpack machine, it does
+    not have Tubelib ID, so it cannot be controlled or monitored. Sensor pad node should
+    be placed directly under AutoSieve. It gets Techpack 4-digit ID and its working principle
+    is identical to Furnace Monitor, allowing standard status query using Tubelib messaging.
+    In addition, reading AutoSieve item counter is also supported.
+    Sensor reads data from attached node only when requested so it does not consume CPU
+    resources when idle (no timers).
+
+    Placement: place directly under Automated Gravel Sieve.
+
+    Status:
+
+    - "fault" - there is no AutoSieve on top of sensor node
+    - "stopped" - AutoSieve is not working
+    - "running" - AutoSieve is running
+    - "defect" - AutoSieve is broken due to aging and needs to be repaired
+
+    Note: there is no "standby" state.
+
+    Supported SaferLua functions:
+
+    - $get_status(...)
+    - $get_counter(...)
+
+    Punch node to see current status.
 
 
 * **Biogas Machines** (biogasmachines)
