@@ -8,9 +8,6 @@ Future plans:
 	  + usage: ticks running, ticks standby, ticks blocked, total ticks etc
 	  and evaluate possible expansion of SaferLua controller '$commands' with
 	  functions to read and reset above fields
-	* Biogas Torch - crafted from glass, biogas and steel ingot (that gives 8)
-	  replacement for default coal torch; should use the same model and mechanics
-	  but modified textures (metal box, blueish light)
 	* Tubelib Chest Indicator - small attachable plate that indicates fill level
 	  of connected Tubelib Chest
 	* Metal Recycler - decomposing device to retrieve metal ingots, Mese shards

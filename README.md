@@ -1,4 +1,4 @@
-# MicuPack v2.3
+# MicuPack v2.4
 
 **Minetest modpack by (real)micu, tested with Minetest 0.4.17.1 running Minetest Game**
 
@@ -187,6 +187,19 @@ git clone https://github.com/realmicu/minetest-micupack.git micupack
     converting cobble and compressed gravel to obsidian, flint to obsidian shards and coal
     blocks to diamonds. Machine consumes Biogas for heating/compacting and Ice for rapid cooling.
     Custom recipes can be added via API function.
+
+  - **Biogas Torch**
+
+    Although not really a Tubelib-compatible machine, this item also helps to shift from Coal
+    to Biogas as primary burning agent. Biogas Torch, a Biogas-powered eternal light source
+    is a modern version of standard torch. Its goal is to replace coal torches as a basic,
+    easy craftable and deployable source of light. Usage and light parameters are identical
+    to original torch. Additionally, Biogas Torch becomes a heat source when placed, removing
+    nearby snow and melting down ice to water (in a 3x3 cube around torch). There are many
+    flavours of Biogas Torch, depending on metal used for handle, but these variations have
+    only decorational purposes.
+    Code and models are imported from Minetest Game default torch (torch.lua) - see source
+    file for details.
 
   Future plans - see TODO file.
 
