@@ -8,8 +8,6 @@ Future plans:
 	  + usage: ticks running, ticks standby, ticks blocked, total ticks etc
 	  and evaluate possible expansion of SaferLua controller '$commands' with
 	  functions to read and reset above fields
-	* Tubelib Chest Indicator - small attachable plate that indicates fill level
-	  of connected Tubelib Chest
 	* Metal Recycler - decomposing device to retrieve metal ingots, Mese shards
 	  and Diamonds from all items and nodes that were crafted from these resources;
 	  device will return random number of ingots and shards - between 1 and craft

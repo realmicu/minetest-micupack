@@ -1,4 +1,4 @@
-# MicuPack v2.4
+# MicuPack v2.5
 
 **Minetest modpack by (real)micu, tested with Minetest 0.4.17.1 running Minetest Game**
 
@@ -200,6 +200,32 @@ git clone https://github.com/realmicu/minetest-micupack.git micupack
     only decorational purposes.
     Code and models are imported from Minetest Game default torch (torch.lua) - see source
     file for details.
+
+  - **Biogas Tank**
+
+    Dedicated storage for Biogas units. A convenient replacement for standard and Techpack
+    chests when it comes to stockpiling Biogas.
+
+    Gas tank comes in 3 sizes:
+    - Small - 2 stacks
+    - Medium - 32 stacks (standard Chest equivalent)
+    - Large - 72 stacks (Tubelib HighPerf Chest equivalent)
+
+    Features:
+    - Biogas-only inventory
+    - Tubelib I/O compatibility
+    - real-time 3-level color visual fill indicator on device box
+    - up-to-date capacity information in infotext (displayed when looking at the tank)
+    - support for Tubelib stack pulling (can be paired with HighPerf Pusher)
+    - not a machine, so no aging and no defects
+    - support for standard SaferLua storage status query ("empty"/"loaded"/"full")
+    - no node timer (capacity information and visual status updated only when node inventory
+      is modified)
+
+    Supported SaferLua functions:
+
+    - $get_status(...)
+
 
   Future plans - see TODO file.
 
