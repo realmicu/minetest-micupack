@@ -40,6 +40,7 @@
 
 	Supported SaferLua functions:
 	- $get_status(...)
+	- $get_crops_status(...)
 
 	Punch node to see current status and crop numbers.
 
@@ -281,6 +282,9 @@ tubelib.register_node("slmodules:cropswatcher", {}, {
 			return true
 		elseif topic == "state" then
 			return cwstate[get_cropswatcher_area_state(pos)]
+		elseif topic == "crops" then
+			local sn, cn, gn = get_cropswatcher_area_state(pos)
+			return { cwstate[sn], cn, gn }
 		else
 			return "unsupported"
 		end
@@ -301,4 +305,24 @@ minetest.register_craft({
 		{ "default:glass", "default:diamond", "default:mese_crystal" },
 		{ "group:wood", "tubelib:wlanchip", "group:wood" },
 	},
+})
+
+--[[
+	--------
+	SaferLua
+	--------
+]]--
+
+sl_controller.register_action("get_crops_status", {
+	cmnd = function(self, num)
+		num = tostring(num or "")
+		return unpack(tubelib.send_request(num, "crops", nil) or { "", "", "" })
+	end,
+	help = " $get_crops_status(num)\n" ..
+		" Read Crops Watcher device state.\n" ..
+		" Function returns 3 values:\n" ..
+		' 1: "error", "growing" or "ready"\n' ..
+		" 2: total number of crops\n" ..
+		" 3: number of fully grown crops\n" ..
+		' example: state, total, grown = $get_crops_status("1234")\n'
 })
