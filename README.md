@@ -1,4 +1,4 @@
-# MicuPack v2.6
+# MicuPack v2.61
 
 **Minetest modpack by (real)micu, tested with Minetest 0.4.17.1 running Minetest Game**
 
@@ -141,17 +141,19 @@ git clone https://github.com/realmicu/minetest-micupack.git micupack
   - **Crops Watcher**
 
     Advanced optical device to assist in crop farming automation.
-    It scans rectangular area of selected radius for crops (wheat, tomatoes etc) and checks if all
-    crops are fully grown so they can be collected either manually or by machines. Device recognizes
-    all registered farming nodes. Crops Watcher sees plants at its level and down to 2 levels below
-    its node (-2 .. 0), with exception of nodes directly under its box.
-    Field scan is peformed when device is asked for status - either via standard "state" message or by
-    device-specific status request (Watcher registers new SaferLua command $get_crops_status() for
-    SL Controllers). When Tubelib ID numbers are entered in the configuration panel, scan can also be
-    initiated by sending "on" message to Crops Watcher (by Timer, Button etc). If field is ready for
-    harvest, device immediately responses with "on" command sent to specified IDs (for example Tubelib
-    Harvester). No messages are sent for other crop states - Crops Watcher never sends "off" commands
-    to not interfere with machinery automation.
+    It scans rectangular area of selected radius for crops (wheat, tomatoes etc) and checks
+    if all crops are fully grown so they can be collected either manually or by machines.
+    Device recognizes all registered farming nodes. Crops Watcher sees plants at its level
+    and down to 2 levels below its node (-2 .. 0), with exception of nodes directly under
+    its box.
+    Field scan is peformed when device is asked for status - either via standard "state"
+    message or by device-specific status request (Watcher registers new SaferLua command
+    $get_crops_status() for SL Controllers). When Tubelib ID numbers are entered in the
+    configuration panel, scan can also be initiated by sending "on" message to Crops Watcher
+    (by Timer, Button etc). If field is ready for harvest, device immediately responses with
+    "on" command sent to specified IDs (for example Tubelib Harvester). No messages are sent
+    for other crop states - Crops Watcher never sends "off" commands to not interfere with
+    machinery automation.
     It is purely event-based node - it does not use node timers or ABMs.
 
     Configuration options:
