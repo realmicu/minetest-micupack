@@ -150,6 +150,15 @@ local fmxy = {
 	biogas_time = tostring(BIOGAS_TICKS * TIMER_TICK_SEC),
 }
 
+-- get node/item/tool description for tooltip
+local function formspec_tooltip(name)
+	local def = minetest.registered_nodes[name] or
+		minetest.registered_craftitems[name] or
+		minetest.registered_items[name] or
+		minetest.registered_tools[name] or nil
+	return def and def.description or ""
+end
+
 -- recipe hint bar
 local function formspec_recipe_hint_bar(recipe_idx)
 	if #hintbar_recipes == 0 or recipe_idx > #hintbar_recipes then
@@ -168,15 +177,19 @@ local function formspec_recipe_hint_bar(recipe_idx)
 		string.format("%2d / %2d", recipe_idx, #hintbar_recipes) .. "]" ..
 	"image_button[1.9,3.3;0.5,0.5;;right;>]" ..
 	"item_image[2.4,3.25;0.5,0.5;" .. input_name .. "]" ..
+	"tooltip[2.4,3.25;0.5,0.5;" .. formspec_tooltip(input_name) .. "]" ..
 	"label[2.9,3.25;x " .. input_count .. "]" ..
 	"image[3.3,3.25;0.5,0.5;tubelib_gui_arrow.png^[resize:16x16]" ..
 	"label[3.7,3.25;" ..
 		string.format("%2d sec +", recipe.time * TIMER_TICK_SEC) .. "]" ..
 	"item_image[4.5,3.25;0.5,0.5;default:ice]" ..
+	"tooltip[4.5,3.25;0.5,0.5;Ice]" ..
 	"image[4.9,3.25;0.5,0.5;tubelib_gui_arrow.png^[resize:16x16]" ..
 	"item_image[5.3,3.25;0.5,0.5;" .. output_name .. "]" ..
+	"tooltip[5.3,3.25;0.5,0.5;" .. formspec_tooltip(output_name) .. "]" ..
 	"label[5.8,3.25;x " .. output_count .. "]" ..
 	"item_image[6.5,3.25;0.5,0.5;tubelib_addons1:biogas]" ..
+	"tooltip[6.5,3.25;0.5,0.5;Biogas]" ..
 	"label[7,3.25;= " .. fmxy.biogas_time .. " sec]"
 end
 

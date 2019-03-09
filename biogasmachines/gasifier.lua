@@ -140,35 +140,41 @@ local fmxy = { inv_h = tostring(INV_H),
 	inv_out_x = tostring(INV_IN_W + 2),
 }
 
+-- get node/item/tool description for tooltip
+local function formspec_tooltip(name)
+	local def = minetest.registered_nodes[name] or
+		minetest.registered_craftitems[name] or
+		minetest.registered_items[name] or
+		minetest.registered_tools[name] or nil
+	return def and def.description or ""
+end
+
 -- recipe hint bar
 local function formspec_recipe_hint_bar(recipe_idx)
 	if #biogas_sources == 0 or recipe_idx > #biogas_sources then
 		return ""
 	end
 	local input_item = biogas_sources[recipe_idx]
-	--local input_desc = minetest.registered_nodes[input_item].description
 	local recipe = biogas_recipes[input_item]
+	local extra_item = recipe.extra and recipe.extra:get_name() or ""
 	return "item_image[0,0;1,1;" .. input_item .. "]" ..
 	"label[0.5,3.25;Recipe]" ..
 	"image_button[1.5,3.3;0.5,0.5;;left;<]" ..
 	"label[2,3.25;" ..
-		string.format("%2d / %2d", recipe_idx, #biogas_sources) ..
-		"]" ..
+		string.format("%2d / %2d", recipe_idx, #biogas_sources) .. "]" ..
 	"image_button[2.8,3.3;0.5,0.5;;right;>]" ..
 	"item_image[3.6,3.25;0.5,0.5;" .. input_item .. "]" ..
-	--"tooltip[3.6,3.25;0.5,0.5;" ..	-- not supported in 0.4.x
-	--	minetest.registered_nodes[input_item].description ..
-	--	";;]" ..
+	"tooltip[3.6,3.25;0.5,0.5;" .. formspec_tooltip(input_item) .. "]" ..
 	"image[4,3.25;0.5,0.5;tubelib_gui_arrow.png^[resize:16x16]" ..
 	"label[4.4,3.25;" ..
-		string.format("%2d sec", recipe.time * TIMER_TICK_SEC) ..
-		"]" ..
+		string.format("%2d sec", recipe.time * TIMER_TICK_SEC) .. "]" ..
 	"image[5,3.25;0.5,0.5;tubelib_gui_arrow.png^[resize:16x16]" ..
 	"item_image[5.5,3.25;0.5,0.5;tubelib_addons1:biogas]" ..
+	"tooltip[5.5,3.25;0.5,0.5;Biogas]" ..
 	"label[6,3.25;x " .. tostring(recipe.count) .. "]" ..
-	(recipe.extra and "item_image[6.5,3.25;0.5,0.5;" ..
-		recipe.extra:get_name() .. "]label[7,3.25;x " ..
-		tostring(recipe.extra:get_count()) .. "]" or "")
+	(recipe.extra and "item_image[6.5,3.25;0.5,0.5;" .. extra_item .. "]" ..
+		"tooltip[6.5,3.25;0.5,0.5;" .. formspec_tooltip(extra_item) .. "]" ..
+		"label[7,3.25;x " ..  tostring(recipe.extra:get_count()) .. "]" or "")
 end
 
 -- formspec

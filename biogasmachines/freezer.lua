@@ -136,12 +136,16 @@ local function formspec(self, pos, meta)
 	"image_button[" .. fmxy.mid_x .. ",2;1,1;" ..
 		self:get_state_button_image(meta) .. ";state_button;]" ..
 	"item_image[1,3.25;0.5,0.5;tubelib_addons1:biogas]" ..
+	"tooltip[1,3.25;0.5,0.5;Biogas]" ..
 	"label[1.5,3.25;= " .. fmxy.biogas_time .. " sec]" ..
 	"item_image[3,3.25;0.5,0.5;default:ice]" ..
+	"tooltip[3,3.25;0.5,0.5;Ice]" ..
 	"label[3.5,3.25;= " .. fmxy.ice_time .. " sec]" ..
 	"item_image[5.25,3.25;0.5,0.5;tubelib_addons1:biogas]" ..
+	"tooltip[5.25,3.25;0.5,0.5;Biogas]" ..
 	"image[5.75,3.25;0.5,0.5;tubelib_gui_arrow.png^[resize:16x16]" ..
 	"item_image[6.25,3.25;0.5,0.5;default:ice]" ..
+	"tooltip[6.25,3.25;0.5,0.5;Ice]" ..
 	"label[6.75,3.25;x " .. fmxy.ice_qty .. "]" ..
 	"item_image[" .. fmxy.inv_out_x .. ",0;1,1;default:ice]" ..
 	"list[context;dst;" .. fmxy.inv_out_x .. ",0;" .. fmxy.inv_out_w ..

@@ -128,6 +128,7 @@ local function formspec(self, pos, meta)
 	"label[2.75,3.25;=]" ..
 	"item_image[3,3.25;0.5,0.5;default:furnace]" ..
 	"item_image[4.5,3.25;0.5,0.5;tubelib_addons1:biogas]" ..
+	"tooltip[4.5,3.25;0.5,0.5;Biogas]" ..
 	"label[5,3.25;= " .. fmxy.biogas_time .. " sec]" ..
 	"list[context;dst;" .. fmxy.inv_out_x .. ",0;" .. fmxy.inv_out_w ..
 		"," .. fmxy.inv_h .. ";]" ..
