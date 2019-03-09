@@ -140,7 +140,7 @@ local function formspec(self, pos, meta)
 	"listring[context;fuel]" ..
 	"listring[current_player;main]" ..
 	(state == tubelib.RUNNING and
-                "box[" .. fmxy.inv_in_w .. ",0;0.82,0.9;#BF5F2F]" or
+                "box[" .. fmxy.inv_in_w .. ",0;0.82,0.88;#BF5F2F]" or
                 "listring[context;cur]listring[current_player;main]") ..
 	default.get_hotbar_bg(0, 4)
 end

@@ -203,7 +203,7 @@ local function formspec(self, pos, meta)
 	"listring[context;src]" ..
 	"listring[current_player;main]" ..
 	(state == tubelib.RUNNING and
-		"box[" .. fmxy.mid_x .. ",0;0.82,0.9;#9F3F1F]" or
+		"box[" .. fmxy.mid_x .. ",0;0.82,0.88;#9F3F1F]" or
 		"listring[context;cur]listring[current_player;main]") ..
 	default.get_hotbar_bg(0, 4)
 end

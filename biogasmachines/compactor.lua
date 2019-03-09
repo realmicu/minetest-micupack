@@ -219,8 +219,8 @@ local function formspec(self, pos, meta)
 	"listring[context;ice]" ..
 	"listring[current_player;main]" ..
 	(state == tubelib.RUNNING and
-		"box[" .. fmxy.mid_x05 .. ",0;0.82,0.9;#BF5F2F]" ..
-		"box[" .. fmxy.mid_x15 .. ",0;0.82,0.9;#2F4FBF]"
+		"box[" .. fmxy.mid_x05 .. ",0;0.82,0.88;#BF5F2F]" ..
+		"box[" .. fmxy.mid_x15 .. ",0;0.82,0.88;#2F4FBF]"
 		or "listring[context;cur]listring[current_player;main]" ..
 		"listring[context;cic]listring[current_player;main]") ..
 	default.get_hotbar_bg(0, 4)
