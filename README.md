@@ -1,6 +1,10 @@
-# MicuPack v2.61
+# MicuPack v2.62
 
-**Minetest modpack by (real)micu, tested with Minetest 0.4.17.1 running Minetest Game**
+**Minetest modpack by (real)micu.**
+
+**Tested with following Minetest versions running Minetest Game:**
+* **0.4.17.1 (*stable-0.4* branch) - all modpack versions**
+* **5.0.0 (*stable-5* branch) - from modpack v2.62**
 
 ### Installation:
 
