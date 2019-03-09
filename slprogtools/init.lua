@@ -825,7 +825,7 @@ minetest.register_tool("slprogtools:slc_memory_programmer", {
 ]]--
 
 local metal_comp = "default:gold_ingot"
-if minetest.get_modpath("moreores") and moreores then
+if minetest.global_exists("moreores") then
 	metal_comp = "moreores:silver_ingot"
 end
 

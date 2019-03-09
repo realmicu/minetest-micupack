@@ -284,7 +284,7 @@ end
 -- cleanup after digging
 local function after_dig_node(pos, oldnode, oldmetadata, digger)
 	tubelib.remove_node(pos)
-	if minetest.get_modpath("pipeworks") then
+	if minetest.global_exists("pipeworks") then
 		pipeworks.scan_for_pipe_objects(pos)
 	end
 end
@@ -302,7 +302,7 @@ local function after_place_node(pos, placer, itemstack, pointed_thing)
 	state_meta_reset(pos, meta)
 	local number = tubelib.add_node(pos, "biogasmachines:freezer")
 	machine:node_init(pos, number)
-	if minetest.get_modpath("pipeworks") then
+	if minetest.global_exists("pipeworks") then
 		pipeworks.scan_for_pipe_objects(pos)
 	end
 end
@@ -722,7 +722,7 @@ minetest.register_craft({
 	},
 })
 
-if minetest.get_modpath("unified_inventory") and unified_inventory then
+if minetest.global_exists("unified_inventory") then
 	unified_inventory.register_craft_type("freezing", {
 		description = "Freezing",
 		icon = 'biogasmachines_freezer_inv_fg.png',

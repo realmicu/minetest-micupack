@@ -120,7 +120,7 @@ function biogasmachines.add_compactor_recipe(recipe)
 		time = recipe.time
         }
 	hintbar_recipes[#hintbar_recipes + 1] = input_name
-	if minetest.get_modpath("unified_inventory") and unified_inventory then
+	if minetest.global_exists("unified_inventory") then
 		unified_inventory.register_craft({
 			type = "compactor",
 			items = { input_item:to_string() },
@@ -806,7 +806,7 @@ minetest.register_craft({
 ]]--
 
 -- Unified Inventory hints
-if minetest.get_modpath("unified_inventory") and unified_inventory then
+if minetest.global_exists("unified_inventory") then
 	unified_inventory.register_craft_type("compactor", {
 		description = "Compactor",
 		icon = 'biogasmachines_compactor_top.png',
@@ -816,7 +816,7 @@ if minetest.get_modpath("unified_inventory") and unified_inventory then
 end
 
 -- default recipes
-if minetest.get_modpath("gravelsieve") and gravelsieve then
+if minetest.global_exists("gravelsieve") then
 	biogasmachines.add_compactor_recipe({
 		input = "gravelsieve:compressed_gravel 8",
 		output = "default:obsidian 1",

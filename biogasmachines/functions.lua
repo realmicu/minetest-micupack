@@ -51,7 +51,7 @@ local ctable = {
 -- Parameters: node position, node object (optional)
 -- Returns: true if water is flowing into device node
 function biogasmachines.is_pipe_with_water(pos, opt_node)
-	if not minetest.get_modpath("pipeworks") then
+	if not minetest.global_exists("pipeworks") then
 		return false
 	end
 	local node = opt_node

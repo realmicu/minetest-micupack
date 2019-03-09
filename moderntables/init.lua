@@ -302,7 +302,7 @@ register_storage_metal_table("copper", "Copper Metal Table with Drawer")
 register_storage_metal_table("steel", "Steel Metal Table with Drawer")
 register_storage_metal_table("gold", "Gold Metal Table with Drawer")
 
-if minetest.get_modpath("tubelib") then
+if minetest.global_exists("tubelib") then
 	-- Simple Tubelib-style wooden table
 	minetest.register_node("moderntables:tubelib_table", {
 		description = "Simple Tubelib Table",

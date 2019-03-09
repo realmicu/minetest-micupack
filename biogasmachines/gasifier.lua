@@ -116,7 +116,7 @@ function biogasmachines.add_gasifier_recipe(biogas_recipe)
 		extra = extra_item,
 	}
 	biogas_sources[#biogas_sources + 1] = input_name
-	if minetest.get_modpath("unified_inventory") and unified_inventory then
+	if minetest.global_exists("unified_inventory") then
 		unified_inventory.register_craft({
 			type = "gasifier",
 			items = { input_name .. " 1" },
@@ -720,7 +720,7 @@ minetest.register_craft({
 ]]--
 
 -- Unified Inventory hints
-if minetest.get_modpath("unified_inventory") and unified_inventory then
+if minetest.global_exists("unified_inventory") then
 	unified_inventory.register_craft_type("gasifier", {
 		description = "Gasifier",
 		icon = 'biogasmachines_gasifier_top.png',

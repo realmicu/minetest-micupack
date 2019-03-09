@@ -28,7 +28,7 @@ end
 -- recognized ores
 local find_ore_list = { "coal", "iron", "copper", "tin", "gold",
 			"mese", "diamond" }
-if minetest.get_modpath("moreores") then
+if minetest.global_exists("moreores") then
 	find_ore_list[#find_ore_list + 1] = "silver"
 	find_ore_list[#find_ore_list + 1] = "mithril"
 end
@@ -59,7 +59,7 @@ local ore_name = { ["coal"] = { "default:stone_with_coal",
 		   ["diamond"] = { "default:stone_with_diamond",
 				   "default:diamondblock" },
 		   ["obsidian"] = { "default:obsidian" } }
-if minetest.get_modpath("moreores") then
+if minetest.global_exists("moreores") then
 	ore_name["silver"] = { "moreores:mineral_silver" }
 	ore_name["mithril"] = { "moreores:mineral_mithril" }
 end
@@ -144,7 +144,7 @@ local function is_mineral(name)
 	if string.match(name, "^default:.*sandstone") then return true end
 	if name == "default:gravel"
 		or name == "default:clay" then return true end
-	if minetest.get_modpath("moreores") then
+	if minetest.global_exists("moreores") then
 		if string.match(name, "^moreores:mineral_") then
 			return true
 		end
@@ -156,7 +156,7 @@ end
 local function has_obsidian(name)
 	if name == nil then return false end
 	if string.match(name, "^default:obsidian") then return true end
-	if minetest.get_modpath("stairs") then  -- part of minetest game now
+	if minetest.global_exists("stairs") then  -- part of minetest game now
 		if string.match(name, "^stairs:stair_obsidian") or
 		   string.match(name, "^stairs:slab_obsidian") then
 			return true
