@@ -1,2 +1,1 @@
-Smartline modules including FurnaceMonitor (read-only device that monitors
-Minetest standard furnace and report its status in Tubelib-compatible way).
+Smartline-compatible devices for enhanced monitoring and control.
