@@ -138,6 +138,17 @@ local function play_click(player_name)
 end
 
 --[[
+	-------
+	Helpers
+	-------
+]]--
+
+-- count Tubelib numbers in comma-separated list
+local function get_num_count(list)
+	return math.floor((string.len(list or "") + 1) / 5)
+end
+
+--[[
 	---------------
 	Device formspec
 	---------------
@@ -246,11 +257,10 @@ local function formspec_programmer_prog(tool, slc_meta)
 	local prog_mark = tool_meta:get_string("prog_mark")
 	local this_var = tool_meta:get_string("this_var")
 	local dev_array = tool_meta:get_string("dev_array")
-	local numlist = minetest.deserialize(
-		tool_meta:get_string("number_list"))
+	local numlen = get_num_count(tool_meta:get_string("number_list"))
 	return "tabheader[0,1.75;tab;info,memory,program,security,help;3;false;false]" ..
 	"label[0,1.75;Machine numbers in memory: " .. msg_C ..
-		tostring(#numlist) .. msg_W .. "]" ..
+		tostring(numlen) .. msg_W .. "]" ..
 	"label[0,2.75;Substitution marker in init()]" ..
 	"field[3.4,3.3;1.75,0;marker_text;;" .. prog_mark .. "]" ..
 	"field_close_on_enter[marker_text;false]" ..
@@ -388,7 +398,7 @@ local function init_metadata_programmer(player, tool)
 		tool_upd = true
 	end
 	if not metatable.fields["number_list"] then
-		tool_meta:set_string("number_list", minetest.serialize({}))
+		tool_meta:set_string("number_list", "")
 		tool_upd = true
 	end
 	if tool_upd then player:set_wielded_item(tool) end
@@ -628,8 +638,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 	elseif fields.erase or fields.rewrite then
 		-- programmer tab buttons
 		if fields.erase then
-			tool_meta:set_string("number_list",
-				minetest.serialize({}))
+			tool_meta:set_string("number_list", "")
 			tool_upd = true
 			play_click(player_name)
 			minetest.chat_send_player(player_name,
@@ -646,17 +655,11 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 			local prog_mark = tool_meta:get_string("prog_mark")
 			local this_var = tool_meta:get_string("this_var")
 			local dev_array = tool_meta:get_string("dev_array")
+			local numlist = tool_meta:get_string("number_list") or ""
 			local newcode = this_var .. " = \"" ..
-				slc_id .. "\"\n" ..dev_array .. " = Array( "
-			local numlist = minetest.deserialize(
-				tool_meta:get_string("number_list"))
-			for i, n in ipairs(numlist) do
-				newcode = newcode .. "\"" .. n .. "\""
-				if i < #numlist then
-					newcode = newcode .. ", "
-				end
-			end
-			newcode = newcode .. " )"
+				slc_id .. "\"\n" ..dev_array .. " = Array( \"" ..
+				string.gsub(numlist, ",", "\", \"") ..
+				"\" )"
 			local init = slc_meta:get_string("init")
 			local newinit, replnum = string.gsub(init, prog_mark,
 				newcode, 1)
@@ -758,16 +761,23 @@ local function on_use_programmer(item, player, pointed_thing)
 			tool_def._formspec(item, pt_meta, 1))
 	else
 		-- pointing at Techpack device
-		local numlist = minetest.deserialize(
-			tool_meta:get_string("number_list"))
-		numlist[#numlist + 1] = pt_id
-		tool_meta:set_string("number_list", minetest.serialize(numlist))
-		play_beep_ok(player_name)
-		minetest.chat_send_player(player_name,
-			msg_Y .. "[" .. label .. "] " .. msg_W ..
-			"Machine with number " .. msg_C .. pt_id ..
-			msg_W .. " stored at position " .. msg_M ..
-			tostring(#numlist))
+		local numlist = tool_meta:get_string("number_list") or ""
+		if string.find(numlist, pt_id) then
+			play_beep_err(player_name)
+			minetest.chat_send_player(player_name,
+				msg_Y .. "[" .. label .. "] " .. msg_W ..
+				"Number " .. msg_C .. pt_id .. msg_W ..
+				" already in memory")
+		else
+			numlist = numlist == "" and pt_id or (numlist .. "," .. pt_id)
+			tool_meta:set_string("number_list", numlist)
+			play_beep_ok(player_name)
+			minetest.chat_send_player(player_name,
+				msg_Y .. "[" .. label .. "] " .. msg_W ..
+				"Machine with number " .. msg_C .. pt_id ..
+				msg_W .. " stored at position " .. msg_M ..
+				tostring(get_num_count(numlist)))
+		end
 	end
 	return item  -- we change metadata so on_use must receive updated item
 end
@@ -807,8 +817,7 @@ minetest.register_tool("slprogtools:slc_memory_programmer", {
 		local player_name = user:get_player_name()
 		local label = item:get_definition()._label
 		local tool_meta = item:get_meta()
-		tool_meta:set_string("number_list",
-			minetest.serialize({}))
+		tool_meta:set_string("number_list", "")
 		play_click(player_name)
 		minetest.chat_send_player(player_name,
 			msg_Y .. "[" .. label .. "] " .. msg_W ..
