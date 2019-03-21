@@ -1,4 +1,4 @@
-# MicuPack v2.62
+# MicuPack v2.7
 
 **Minetest modpack by (real)micu.**
 
@@ -185,6 +185,52 @@ git clone https://github.com/realmicu/minetest-micupack.git micupack
     - $get_crops_status(...)
 
     Punch node to see current status and crop numbers.
+
+  - **Digilines Message Relay**
+
+    Chip that forwards communication between Digilines and Tubelib networks. It is a simple
+    low-level device - it forwards messages as soon as they appear. It has no queue or flow
+    control - it is up to sending and receiving systems to limit rate of communication.
+    Message Relay accepts only Tubelib messages of type "msg", so its main role is to talk
+    to SaferLua Controllers or Terminals. It does not forward any other Tubelib commands,
+    like "on" or "off", so it cannot be used to control machinery directly. Chip must be
+    configured before use. Configuration can be changed at any time.
+    Chip does not use node timers.
+
+    Configuration options:
+
+    - Tubelib number(s) - space-separated list of Tubelib IDs (mandatory)
+    - Digiline channel - name of Digiline channel device connects to (mandatory)
+
+    Placement: connect to Digiline network via standard blue cable.
+
+    Operational principles:
+
+    - forwarding is disabled until Relay Chip is configured
+    - configuration can be altered at any time with immediate effect
+    - only one Digiline channel per chip is supported
+    - only "msg" type of Tubelib communication is accepted; other packets are silently dropped
+    - data sent on Digiline channel is converted to Tubelib "msg" type
+    - Digiline messages forwarded to Tubelib targets have their source number set to Relay ID
+    - Tubelib messages originating from devices not present on number list are rejected
+      (security measure)
+    - Tubelib messages that appear to come from device itself are rejected (anti-spoofing)
+    - Relay Chip rejects configuration if its number appear on number list (loop prevention)
+    - Digilines message sent to configured channel is forwarded to all listed Tubelib nodes
+    - Relay does not queue messages
+    - Relay does not provide flow rate control
+    - Relay does not respond to any commands and status queries
+    - only messages of type "string" are forwarded; Tubelib supports text messages only so no
+      conversion is necessary; Digiline numbers and booleans are automatically converted to
+      strings before being dispatched to Tubelib receivers; all other data types (arrays,
+      functions etc) are silently dropped
+
+    Supported SaferLua functions:
+    - $send_msg(num, msg)
+    - $get_msg()
+
+    Supported Digilines functions:
+    - digiline_send(channel, msg)
 
 
 * **Biogas Machines** (biogasmachines)
