@@ -18,11 +18,9 @@ minertools = {}
 ]]--
 
 -- parameters
-local light_level
+local light_level = 0
 if minetest.settings:get_bool("minertools_flashlight_on") then
 	light_level = minetest.LIGHT_MAX
-else
-	light_level = 0
 end
 
 -- recognized ores
@@ -562,8 +560,6 @@ end
 -- 		pointed_thing - node object (node)
 local function mineralfinder_use(item, player, pointed_thing)
 	local player_name = player:get_player_name()
-	local player_pos = vector.round(player:getpos())
-	local look_dir = player:get_look_dir()  -- norm vec
 	local tool_def = item:get_definition()
 	tool_def._init_metadata(player, item)
 	local label = tool_def._find_label
@@ -571,28 +567,24 @@ local function mineralfinder_use(item, player, pointed_thing)
 	local det_lvl = tool_def._find_detail
 	local item_meta = item:get_meta()
 	local ore_type = item_meta:get_string("ore_type")
-	local head_pos = vector.add(player_pos, { x = 0, y = 1, z = 0 })
-	local node = {}
-	local pos_vec = {}
-	local last_vec = nil
+	local head_pos = vector.add(vector.round(player:get_pos()), { x = 0, y = 1, z = 0 })
+	local end_pos = vector.add(head_pos, vector.round(vector.multiply(player:get_look_dir(), depth)))
 	local orecount = 0
 	local obsblock = false
 	local oredepth = 0
-	for i = 1, depth, 1 do
-		pos_vec = vector.round(vector.add(head_pos,
-				       vector.multiply(look_dir, i)))
-                if not last_vec or not vector.equals(pos_vec, last_vec) then
-			node = minetest.get_node_or_nil(pos_vec)
-			if node then
-				if rev_ore_name[node.name] == ore_type then
-					orecount = orecount + 1
-					if oredepth == 0 then oredepth = i end
-				elseif has_obsidian(node.name) then
-					obsblock = true
-					break
+	local ray = minetest.raycast(head_pos, end_pos, false, false)
+	for pt in ray do
+		local node = minetest.get_node_or_nil(pt.under)
+		if node then
+			if rev_ore_name[node.name] == ore_type then
+				orecount = orecount + 1
+				if oredepth == 0 then
+					oredepth = vector.distance(head_pos, pt.under)
 				end
+			elseif has_obsidian(node.name) then
+				obsblock = true
+				break
 			end
-			last_vec = pos_vec  -- protects against double count
 		end
 	end
 	local oremsg = ""
