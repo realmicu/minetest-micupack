@@ -163,14 +163,6 @@ local function has_obsidian(name)
 	return false
 end
 
--- check if node is in array
-local function is_member_of(name, array)
-	for _, n in ipairs(array) do
-		if n == name then return true end
-	end
-	return false
-end
-
 --[[
 	-------------
 	Settings Menu
@@ -411,7 +403,7 @@ local function mineralfinder_init_metadata(player, tool)
 	local ore_list = tool_def._find_ore_list
 	local tool_meta = tool:get_meta()
 	local ore_type = tool_meta:get_string("ore_type")
-	if not is_member_of(ore_type, ore_list) then
+	if table.indexof(ore_list, ore_type) < 0 then
 		tool_meta:set_string("ore_type", "coal")
 		player:set_wielded_item(tool)  -- update item
 		return true
@@ -441,7 +433,7 @@ local function multidevice_init_metadata(player, tool)
 	-- mineral finder module
 	local ore_list = tool_def._find_ore_list
 	local ore_type = tool_meta:get_string("ore_type")
-	if not is_member_of(ore_type, ore_list) then
+	if table.indexof(ore_list, ore_type) < 0 then
 		tool_meta:set_string("ore_type", "coal")
 		tool_upd = true
 	end
