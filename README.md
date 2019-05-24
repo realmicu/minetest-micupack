@@ -1,10 +1,10 @@
-# MicuPack v2.7
+# MicuPack v2.8
 
 **Minetest modpack by (real)micu.**
 
 **Tested with following Minetest versions running Minetest Game:**
-* **0.4.17.1 (*stable-0.4* branch) - all modpack versions up to v2.62**
-* **5.0.0 (*stable-5* branch) - from modpack v2.62**
+* **0.4.17.1 (*stable-0.4* branch) - all modpack versions up to v2.61**
+* **5.0.0+ (*stable-5* branch) - from modpack v2.62**
 
 ### Installation:
 
@@ -320,6 +320,50 @@ git clone https://github.com/realmicu/minetest-micupack.git micupack
     Supported SaferLua functions:
 
     - $get_status(...)
+
+
+* **Miner Chest** (minerchest)
+
+  Miner Chest is a high capacity storage chest that automatically combines selected resources
+  into respective blocks.  Chest is compatible with Techpack (Tubelib2 framework). It has
+  capacity of 60 items and supports stack pulling (can be paired with HighPerf Pusher).
+
+  It automatically combines following items in its inventory:
+  - all ingots types into respective blocks
+  - all sand units into respective sandstones
+  - coal lump -> coal block
+  - mese crystal -> mese block
+  - diamond crystal -> diamond block
+  - wheat -> straw
+  - clay lump -> clay block
+
+  More allowed item combinations can be registered via API function.
+
+  Chest supports only reversible combinations (example: metal blocks can be converted back to
+  ingots) of popular minerals and resources (hence name Miner's Chest). Some free space is
+  required to perform item reorganization as node may process only things that are already in
+  its inventory.  To increase efficiency, chest automatically piles up items into stacks, trying
+  to free up as many slots as possible.
+  When used as a source for Tubelib network, chest prioritizes items it sends out into tubes -
+  so ingots and all other items that can be later combined into blocks are scheduled to be
+  sent last. This approach increases chance that incoming elements will be successfully combined
+  and passed further in compacted form.
+
+  Features:
+  - automatic crafting of configured items into blocks
+  - automatic stack merging
+  - Tubelib I/O compatibility
+  - support for Tubelib stack pulling (can be paired with HighPerf Pusher)
+  - item prioritization for Tubelib pulling (stackable items go last)
+  - no defects (not a machine)
+  - support for standard SaferLua storage status (empty/loaded/full)
+  - storage status - visual indicator and infotext
+  - infobar in inventory window
+  - no node timer (working only when inventory is updated)
+
+  Supported SaferLua functions:
+
+  - $get_status(...)
 
 
   Future plans - see TODO file.

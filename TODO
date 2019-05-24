@@ -1,5 +1,7 @@
 
 Future plans:
+	* add SaferLua command to query device and return its type and, optionally,
+	  custom text field (helps to locate defects in complex machinery)
 	* introduce enhanced machine statictics including:
 	  + counters for items in and items out
 	  + biogas used counter
