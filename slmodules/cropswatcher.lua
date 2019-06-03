@@ -98,10 +98,10 @@ local function get_cropswatcher_area_state(pos)
 	local meta = minetest.get_meta(pos)
 	local radius = meta:get_int("radius") or 8
 	local cropsmin = meta:get_int("crops_min") or 0
-	local _, crops = minetest.find_nodes_in_area(
-		vector.add(pos, { x = -radius, y = LEVEL_BOTTOM, z = -radius }),
-		vector.add(pos, { x = radius, y = LEVEL_TOP, z = radius }),
-		cropnames)
+	local minpos = vector.add(pos, { x = -radius, y = LEVEL_BOTTOM, z = -radius })
+	local maxpos = vector.add(pos, { x = radius, y = LEVEL_TOP, z = radius })
+	minetest.load_area(minpos, maxpos)
+	local _, crops = minetest.find_nodes_in_area(minpos, maxpos, cropnames)
 	local _, subcrops = minetest.find_nodes_in_area(
 		vector.add(pos, { x = 0, y = LEVEL_BOTTOM, z = 0 }),
 		vector.add(pos, { x = 0, y = LEVEL_TOP, z = 0 }),
