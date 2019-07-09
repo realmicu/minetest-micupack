@@ -75,11 +75,12 @@ local cwstate = {
 -- tables with farming crop nodes
 local cropnames = {}
 local isgrowncrop = {}
-for _, c in pairs(farming.registered_plants) do
+for j, c in pairs(farming.registered_plants) do
+	local lcn = c.crop or "farming:" .. j
 	for i = 1, c.steps do
-		cropnames[#cropnames + 1] = c.crop .. "_" .. i
+		cropnames[#cropnames + 1] = lcn .. "_" .. i
 	end
-	isgrowncrop[c.crop .. "_" .. c.steps] = true
+	isgrowncrop[lcn .. "_" .. c.steps] = true
 end
 
 --[[
