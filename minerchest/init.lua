@@ -68,6 +68,8 @@ local INV_X = 12
 local INV_Y = 5
 local INV_SIZE = INV_X * INV_Y
 
+local use_tubelib = minetest.global_exists("tubelib") and true or false
+
 --[[
 	----------------------
 	Public functions (API)
@@ -175,7 +177,8 @@ local function formspec_item_bar(width, y)
 	for i, _ in pairs(combdata) do
 		cblen = cblen + 1
 	end
-	local arrowup = "tubelib_gui_arrow.png^[transformR90"
+	local arrowup = use_tubelib and "tubelib_gui_arrow.png^[transformR90"
+		or "gui_furnace_arrow_fg.png"
 	local mx = math.max((width - cblen * 0.5 - 1) / 2, 0)
 	local itembar = "image[" .. tostring(mx) .. "," ..
 		tostring(y + 0.25) .. ";0.5,0.5;" .. arrowup .. "]"
@@ -228,12 +231,29 @@ end
 	-------
 ]]--
 
+-- get_inv_state() function from Techpack by Joe7575, see tubelib/command.lua
+-- (simple version, in case no tubelib mod is present)
+local function get_inv_state(meta, list)
+	local inv = meta:get_inventory()
+	if inv:is_empty(list) then
+		return "empty"
+	else
+		local l = inv:get_list(list)
+		for _, i in ipairs(l) do
+			if i:is_empty() then
+				return "loaded"
+			end
+		end
+	end
+	return "full"
+end
+
 -- swap chest node at pos to reflect current fill state
 local function update_chest_node(pos)
 	local node = minetest.get_node(pos)
 	local meta = minetest.get_meta(pos)
-	local number = meta:get_string("number")
-	local state = tubelib.get_inv_state(meta, "main")
+	local number = meta:get_string("number") or ""
+	local state = get_inv_state(meta, "main")
 	meta:set_string("infotext", "Miner Chest " .. number ..
 		" (" .. state .. ")")
 	local newname
@@ -337,7 +357,9 @@ end
 
 -- cleanup after digging
 local function after_dig_node(pos, oldnode, oldmetadata, digger)
-	tubelib.remove_node(pos)
+	if use_tubelib then
+		tubelib.remove_node(pos)
+	end
 end
 
 -- init after placement
@@ -347,8 +369,10 @@ local function after_place_node(pos, placer, itemstack, pointed_thing)
 	local inv = meta:get_inventory()
 	inv:set_size("main", INV_SIZE)
 	meta:set_string("owner", placer:get_player_name())
-	local number = tubelib.add_node(pos, "minerchest:chest")
-	meta:set_string("number", number)
+	if use_tubelib then
+		local number = tubelib.add_node(pos, "minerchest:chest")
+		meta:set_string("number", number)
+	end
 	meta:set_string("formspec", formspec())
 	update_chest_node(pos)
 end
@@ -425,52 +449,54 @@ minetest.register_node("minerchest:chest_full", {
 	on_metadata_inventory_take = on_metadata_inventory_change,
 })
 
-tubelib.register_node("minerchest:chest", { "minerchest:chest_full" }, {
+if use_tubelib then
+	tubelib.register_node("minerchest:chest", { "minerchest:chest_full" }, {
 
-	on_push_item = function(pos, side, item)
-		local meta = minetest.get_meta(pos)
-		local ret = tubelib.put_item(meta, "main", item)
-		combine_chest_items(pos)
-		update_chest_node(pos)
-		return ret
-	end,
-
-	on_pull_item = function(pos, side)
-		local meta = minetest.get_meta(pos)
-		set_next_tubelib_item(meta, "main")
-		local ret = tubelib.get_item(meta, "main")
-		combine_chest_items(pos)
-		update_chest_node(pos)
-		return ret
-	end,
-
-	on_pull_stack = function(pos, side)
-		local meta = minetest.get_meta(pos)
-		set_next_tubelib_item(meta, "main")
-		local ret = tubelib.get_stack(meta, "main")
-		combine_chest_items(pos)
-		update_chest_node(pos)
-		return ret
-	end,
-
-	on_unpull_item = function(pos, side, item)
-		local meta = minetest.get_meta(pos)
-		local ret = tubelib.put_item(meta, "main", item)
-		combine_chest_items(pos)
-		update_chest_node(pos)
-		return ret
-	end,
-
-	on_recv_message = function(pos, topic, payload)
-                if topic == "state" then
+		on_push_item = function(pos, side, item)
 			local meta = minetest.get_meta(pos)
-			return tubelib.get_inv_state(meta, "main")
-		else
-			return "unsupported"
-		end
-	end,
+			local ret = tubelib.put_item(meta, "main", item)
+			combine_chest_items(pos)
+			update_chest_node(pos)
+			return ret
+		end,
 
-})
+		on_pull_item = function(pos, side)
+			local meta = minetest.get_meta(pos)
+			set_next_tubelib_item(meta, "main")
+			local ret = tubelib.get_item(meta, "main")
+			combine_chest_items(pos)
+			update_chest_node(pos)
+			return ret
+		end,
+
+		on_pull_stack = function(pos, side)
+			local meta = minetest.get_meta(pos)
+			set_next_tubelib_item(meta, "main")
+			local ret = tubelib.get_stack(meta, "main")
+			combine_chest_items(pos)
+			update_chest_node(pos)
+			return ret
+		end,
+
+		on_unpull_item = function(pos, side, item)
+			local meta = minetest.get_meta(pos)
+			local ret = tubelib.put_item(meta, "main", item)
+			combine_chest_items(pos)
+			update_chest_node(pos)
+			return ret
+		end,
+
+		on_recv_message = function(pos, topic, payload)
+			if topic == "state" then
+				local meta = minetest.get_meta(pos)
+				return tubelib.get_inv_state(meta, "main")
+			else
+				return "unsupported"
+			end
+		end,
+
+	})
+end
 
 --[[
 	--------
@@ -481,7 +507,8 @@ tubelib.register_node("minerchest:chest", { "minerchest:chest_full" }, {
 minetest.register_craft({
 	output = "minerchest:chest",
 	recipe = {
-		{ "default:steelblock", "tubelib:tubeS", "default:goldblock" },
+		{ "default:steelblock", use_tubelib and "tubelib:tubeS"
+			or "group:wood", "default:goldblock" },
 		{ "group:wood", "", "group:wood" },
 		{ "default:copperblock", "group:wood", "default:tinblock" },
 	},

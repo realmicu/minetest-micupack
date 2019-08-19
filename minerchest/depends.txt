@@ -1,7 +1,7 @@
 default
 farming
-tubelib
-tubelib_addons1
-tubelib2
+tubelib?
+tubelib_addons1?
+tubelib2?
 moreores?
 basic_materials?
