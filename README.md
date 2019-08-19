@@ -1,4 +1,4 @@
-# MicuPack v2.8
+# MicuPack v2.9
 
 **Minetest modpack by (real)micu.**
 
@@ -36,7 +36,8 @@ git clone https://github.com/realmicu/minetest-micupack.git micupack
     to be a handheld, improved version of Mineral Detector mentioned earlier)
   - mineral finder - short range directional scanner to find nearby deposits of selected
     mineral; very picky, especially at angles, but driven by simple logic
-  - all-in-one versions of above devices, each one with improved characteristics
+  - all-in-one versions of above devices, each one with improved characteristics and
+    distance meter module
 
 
 * **SaferLua Programming Tools** (slprogtools)
