@@ -81,9 +81,11 @@ local ore_name = { ["coal"] = { "default:stone_with_coal",
 local MODE_GEOTHERM = 1
 local MODE_ORESCAN = 2
 local MODE_OREFIND = 3
+local MODE_DISTMTR = 4
 local mode_name = { [MODE_GEOTHERM] = "Geothermometer",
 		    [MODE_ORESCAN] = "Mineral Scanner",
-		    [MODE_OREFIND] = "Mineral Finder" }
+		    [MODE_OREFIND] = "Mineral Finder",
+		    [MODE_DISTMTR] = "Distance Meter" }
 
 -- fast lookup tables
 local rev_ore_name = {}
@@ -96,6 +98,9 @@ local rev_mode_name = {}
 for i, m in pairs(mode_name) do
 	rev_mode_name[m] = i
 end
+
+-- head position
+local head_offset = vector.new({ x = 0, y = 1, z = 0 })
 
 --[[
 	---------------
@@ -309,7 +314,8 @@ local function mineralfinder_formspec(tool)
 	"button_exit[0.75,1.75;1.5,0.5;ok;OK]"
 end
 
-local function multidevice_formspec_gt(tool)
+-- simple form without options
+local function multidevice_formspec_noopts(tool, mode)
 	-- function requires all metadata to be accessible
 	-- (or initialized elsewhere)
 	local label = tool:get_definition().description
@@ -323,9 +329,16 @@ local function multidevice_formspec_gt(tool)
 	"no_prepend[]" ..
 	"label[0.5,0;" .. minetest.colorize("#FFFF00", label) .. "]" ..
 	"label[0,0.75;" .. minetest.colorize("#00FFFF", "Mode") .. "]" ..
-	"dropdown[1.75,0.625;2.5;mode;" .. mode_opts .. ";" ..
-		MODE_GEOTHERM .. "]" ..
+	"dropdown[1.75,0.625;2.5;mode;" .. mode_opts .. ";" .. mode .. "]" ..
 	"button_exit[1.25,2.75;1.5,0.5;ok;OK]"
+end
+
+local function multidevice_formspec_gt(tool)
+	return multidevice_formspec_noopts(tool, MODE_GEOTHERM)
+end
+
+local function multidevice_formspec_dm(tool)
+	return multidevice_formspec_noopts(tool, MODE_DISTMTR)
 end
 
 local function multidevice_formspec_ms(tool)
@@ -574,7 +587,7 @@ local function mineralfinder_use(item, player, pointed_thing)
 	local det_lvl = tool_def._find_detail
 	local item_meta = item:get_meta()
 	local ore_type = item_meta:get_string("ore_type")
-	local head_pos = vector.add(vector.round(player:get_pos()), { x = 0, y = 1, z = 0 })
+	local head_pos = vector.add(vector.round(player:get_pos()), head_offset)
 	local end_pos = vector.add(head_pos, vector.round(vector.multiply(player:get_look_dir(), depth)))
 	local orecount = 0
 	local obsblock = false
@@ -624,9 +637,48 @@ local function mineralfinder_use(item, player, pointed_thing)
 	play_pulse(player_name)
 	minetest.chat_send_player(player_name,
 		msg_yellow .. "[" .. label .. "]" .. msg_white ..
-		" Scan result for " .. msg_zero ..
-		ore_type .. msg_white .. " : " .. oremsg .. msg_white)
+		" Scan result for " .. msg_zero .. ore_type .. msg_white ..
+		" (range " .. depth .. ") : " .. oremsg .. msg_white)
         return item
+end
+
+-- distance meter (DM)
+-- parameters:	item - item object (itemstack)
+-- 		player - player object (player)
+-- 		pointed_thing - node object (node)
+local function distancemeter_use(item, player, pointed_thing)
+	-- TODO: implement using raycast (...,...,false,false)
+	local player_name = player:get_player_name()
+	local tool_def = item:get_definition()
+	tool_def._init_metadata(player, item)
+	local label = tool_def._dist_label
+	local range_max = tool_def._dist_range_max
+	local head_pos = vector.add(vector.round(player:get_pos()), head_offset)
+	local dist_pos = nil
+	local distance = msg_warn .. "MAX"
+	if pointed_thing and pointed_thing.type == "node" then
+		dist_pos = pointed_thing.above
+	else
+		local end_pos = vector.add(head_pos, vector.round(vector.multiply(player:get_look_dir(), range_max)))
+		local ray = minetest.raycast(head_pos, end_pos, false, false)
+		for pt in ray do
+			if minetest.get_node_or_nil(pt.under) then
+				dist_pos = pt.above
+				break
+			end
+		end
+	end
+	if dist_pos then
+		distance = msg_zero .. string.format("%.1f", vector.distance(head_pos, dist_pos))
+		play_pulse(player_name)
+	else
+		play_beep_err(player_name)
+	end
+	minetest.chat_send_player(player_name,
+		msg_yellow .. "[" .. label .. "]" .. msg_white ..
+		" Distance (max " .. range_max .. ") : " ..
+		distance .. msg_white)
+        return nil
 end
 
 -- multidevices (PMC, AMA, UMG)
@@ -645,6 +697,8 @@ local function multidevice_use(item, player, pointed_thing)
 		mineralscanner_use(item, player, pointed_thing)
 	elseif mode == MODE_OREFIND then
 		mineralfinder_use(item, player, pointed_thing)
+	elseif mode == MODE_DISTMTR then
+		distancemeter_use(item, player, pointed_thing)
 	end
 	return item
 end
@@ -787,6 +841,7 @@ minetest.register_tool("minertools:mineral_finder", {
 
 	Technical info:
 	3 devices combined into one with no modifications
+	Distance Meter feature added
 
 	Left click - scan and show results
 	Right click - device menu
@@ -803,7 +858,8 @@ minetest.register_tool("minertools:portable_mining_computer", {
 	_init_metadata = multidevice_init_metadata,
 	_formspec = { [MODE_GEOTHERM] = multidevice_formspec_gt,
 		      [MODE_ORESCAN] = multidevice_formspec_ms,
-		      [MODE_OREFIND] = multidevice_formspec_mf },
+		      [MODE_OREFIND] = multidevice_formspec_mf,
+		      [MODE_DISTMTR] = multidevice_formspec_dm },
 	_is_multidevice = true,
 	_temp_label = "PMC:Geothermometer",
 	_temp_radius = 10,
@@ -817,6 +873,8 @@ minetest.register_tool("minertools:portable_mining_computer", {
 	_find_depth = 5,
 	_find_detail = 0,
 	_find_ore_list = find_ore_list,
+	_dist_label = "PMC:DistanceMeter",
+	_dist_range_max = 50,
 	on_use = multidevice_use,
 	on_place = show_menu,
 	on_secondary_use = show_menu,
@@ -837,6 +895,7 @@ minetest.register_tool("minertools:portable_mining_computer", {
 	* increased MineralFinder range
 	* increased MineralScanner range
 	* increased Geothermometer sensivity range
+	* doubled DistanceMeter range
 	* finder signal strength (low/medium/high) indicates distance to ore
 
 	Left click - scan and show results
@@ -854,7 +913,8 @@ minetest.register_tool("minertools:advanced_mining_assistant", {
 	_init_metadata = multidevice_init_metadata,
 	_formspec = { [MODE_GEOTHERM] = multidevice_formspec_gt,
 		      [MODE_ORESCAN] = multidevice_formspec_ms,
-		      [MODE_OREFIND] = multidevice_formspec_mf },
+		      [MODE_OREFIND] = multidevice_formspec_mf,
+		      [MODE_DISTMTR] = multidevice_formspec_dm },
 	_is_multidevice = true,
 	_temp_label = "AMA:Geothermometer",
 	_temp_radius = 12,		-- PMC + 2
@@ -868,6 +928,8 @@ minetest.register_tool("minertools:advanced_mining_assistant", {
 	_find_depth = 8,		-- PMC + 3
 	_find_detail = 1,		-- PMC ++
 	_find_ore_list = find_ore_list,
+	_dist_label = "AMA:DistanceMeter",
+	_dist_range_max = 100,		-- PMC * 2
 	on_use = multidevice_use,
 	on_place = show_menu,
 	on_secondary_use = show_menu,
@@ -890,6 +952,7 @@ minetest.register_tool("minertools:advanced_mining_assistant", {
 	* increased MineralScanner range
 	* increased Geothermometer sensivity range
 	* increased Geothermometer display precision
+	* doubled DistanceMeter range
 	* finder signal strength (in percent) indicates distance to ore
 
 	Left click - scan and show results
@@ -908,7 +971,8 @@ minetest.register_tool("minertools:ultimate_mining_gizmo", {
 	_init_metadata = multidevice_init_metadata,
 	_formspec = { [MODE_GEOTHERM] = multidevice_formspec_gt,
 		      [MODE_ORESCAN] = multidevice_formspec_ms,
-		      [MODE_OREFIND] = multidevice_formspec_mf },
+		      [MODE_OREFIND] = multidevice_formspec_mf,
+		      [MODE_DISTMTR] = multidevice_formspec_dm },
 	_is_multidevice = true,
 	_temp_label = "UMG:Geothermometer",
 	_temp_radius = 16,		-- AMA + 4
@@ -922,6 +986,8 @@ minetest.register_tool("minertools:ultimate_mining_gizmo", {
 	_find_depth = 12,		-- AMA + 4
 	_find_detail = 2,		-- AMA ++
 	_find_ore_list = find_ore_list,
+	_dist_label = "UMG:DistanceMeter",
+	_dist_range_max = 200,		-- AMA * 2
 	on_use = multidevice_use,
 	on_place = show_menu,
 	on_secondary_use = show_menu,
