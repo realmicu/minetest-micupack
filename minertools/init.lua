@@ -30,6 +30,16 @@ if minetest.global_exists("moreores") then
 	find_ore_list[#find_ore_list + 1] = "silver"
 	find_ore_list[#find_ore_list + 1] = "mithril"
 end
+if minetest.get_modpath("quartz") then	-- quartz has no global own var
+	find_ore_list[#find_ore_list + 1] = "quartz"
+end
+if minetest.global_exists("technic") then
+	find_ore_list[#find_ore_list + 1] = "lead"
+	find_ore_list[#find_ore_list + 1] = "zinc"
+	find_ore_list[#find_ore_list + 1] = "sulfur"
+	find_ore_list[#find_ore_list + 1] = "chromium"
+	find_ore_list[#find_ore_list + 1] = "uranium"
+end
 local scan_ore_list = table.copy(find_ore_list)
 scan_ore_list[#scan_ore_list + 1] = "obsidian"
 
@@ -56,11 +66,16 @@ local ore_name = { ["coal"] = { "default:stone_with_coal",
 				"default:mese"},
 		   ["diamond"] = { "default:stone_with_diamond",
 				   "default:diamondblock" },
-		   ["obsidian"] = { "default:obsidian" } }
-if minetest.global_exists("moreores") then
-	ore_name["silver"] = { "moreores:mineral_silver" }
-	ore_name["mithril"] = { "moreores:mineral_mithril" }
-end
+		   ["obsidian"] = { "default:obsidian" },
+		   ["silver"] = { "moreores:mineral_silver" },
+		   ["mithril"] = { "moreores:mineral_mithril" },
+		   ["quartz"] = { "quartz:quartz_ore" },
+		   ["lead"] = { "technic:mineral_lead" },
+		   ["zinc"] = { "technic:mineral_zinc" },
+		   ["sulfur"] = { "technic:mineral_sulfur" },
+		   ["chromium"] = { "technic:mineral_chromium" },
+		   ["uranium"] = { "technic:mineral_uranium" },
+		}
 
 -- multidevice
 local MODE_GEOTHERM = 1

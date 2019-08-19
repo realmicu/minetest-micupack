@@ -1,3 +1,5 @@
 default
 stairs?
 moreores?
+quartz?
+technic?
