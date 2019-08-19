@@ -542,3 +542,12 @@ end
 if minetest.global_exists("basic_materials") then
 	minerchest.allow_item_combine("basic_materials:brass_ingot", "basic_materials:brass_block")
 end
+
+if minetest.global_exists("technic") then
+	minerchest.allow_item_combine("technic:cast_iron_ingot", "technic:cast_iron_block")
+	minerchest.allow_item_combine("technic:carbon_steel_ingot", "technic:carbon_steel_block")
+	minerchest.allow_item_combine("technic:stainless_steel_ingot", "technic:stainless_steel_block")
+	minerchest.allow_item_combine("technic:lead_ingot", "technic:lead_block")
+	minerchest.allow_item_combine("technic:zinc_ingot", "technic:zinc_block")
+	minerchest.allow_item_combine("technic:chromium_ingot", "technic:chromium_block")
+end
