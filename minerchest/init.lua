@@ -125,6 +125,8 @@ function minerchest.allow_item_combine(source_item, block_item)
 		end
 	end
 	if not fis or not fib then
+		minetest.log("warning", "minerchest: no combination recipe for (\"" ..
+			sn .. "\", \"" .. bn.. "\") - skipping.")
 		return false
 	end
 	-- verify if recipe is reversible
@@ -150,6 +152,8 @@ function minerchest.allow_item_combine(source_item, block_item)
 		end
 	end
 	if not isrev then
+		minetest.log("warning", "minerchest: combination recipe (\"" ..
+			sn .. "\", \"" .. bn.. "\") is not reversible - skipping.")
 		return false
 	end
 	combdata[sn] = { items = fis, output = fib }
