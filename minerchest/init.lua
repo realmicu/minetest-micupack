@@ -9,9 +9,9 @@
 	This is source file for Miner's Chest - a high capacity storage chest
 	that automatically combines selected resources into respective blocks.
 
-	Chest is compatible with Techpack (Tubelib2 framework). It has capacity
-	of 60 items and supports stack pulling (can be paired with HighPerf
-	Pusher).
+	Chest is compatible with Techpack (Tubelib2 framework) and Pipeworks
+	(pneumatic tubes). It has capacity of 60 items. When used with Tubelib
+	it supports stack pulling (can be paired with HighPerf Pusher).
 
 	It automatically combines following items into blocks:
 	* steel ingot -> steel block
@@ -33,6 +33,9 @@
 
 	More allowed item combinations can be registered via API function.
 
+	Note: some mods can disable some of above crafting recipes or make
+	them non-reversible (Technic for example).
+
 	Chest supports only reversible combinations (example: metal blocks can
 	be converted back to ingots) of popular minerals and resources (hence
 	name Miner's Chest). Due to game internal design, chest requires some
@@ -43,6 +46,7 @@
 	* automatic crafting of configured items into blocks
 	* automatic stack merging
 	* Tubelib I/O compatibility
+	* Pipeworks compatibility (accepts input from tubes)
 	* support for Tubelib stack pulling (can be paired with HighPerf Pusher)
 	* item prioritization for Tubelib pulling (stackable items go last)
 	* no defects (not a machine)
@@ -69,6 +73,7 @@ local INV_Y = 5
 local INV_SIZE = INV_X * INV_Y
 
 local use_tubelib = minetest.global_exists("tubelib") and true or false
+local use_pipeworks = minetest.global_exists("pipeworks") and true or false
 
 --[[
 	----------------------
@@ -320,6 +325,29 @@ local function combine_chest_items(pos)
 	pile_up_items(inv, "main")
 end
 
+-- pipeworks tube support
+local pipeworks_tube = {}
+if use_pipeworks then
+	pipeworks_tube = {
+		input_inventory = "main",
+		connect_sides = {left = 1, right = 1, back = 1,
+				 front = 1, bottom = 1, top = 1},
+		insert_object = function(pos, node, stack, direction, owner)
+			local meta = minetest.get_meta(pos)
+			local inv = meta:get_inventory()
+			local ret = inv:add_item("main", stack)
+			combine_chest_items(pos)
+			update_chest_node(pos)
+			return ret
+		end,
+		can_insert = function(pos, node, stack, direction, owner)
+			local meta = minetest.get_meta(pos)
+			local inv = meta:get_inventory()
+			return inv:room_for_item("main", stack)
+		end,
+	}
+end
+
 -- tubelib takes items in a round-robin fashion - this function
 -- modifies this method a little by skipping items that can be
 -- combined into blocks - until only these remain
@@ -364,6 +392,9 @@ local function after_dig_node(pos, oldnode, oldmetadata, digger)
 	if use_tubelib then
 		tubelib.remove_node(pos)
 	end
+	if use_pipeworks then
+		pipeworks.after_dig(pos)
+	end
 end
 
 -- init after placement
@@ -376,6 +407,9 @@ local function after_place_node(pos, placer, itemstack, pointed_thing)
 	if use_tubelib then
 		local number = tubelib.add_node(pos, "minerchest:chest")
 		meta:set_string("number", number)
+	end
+	if use_pipeworks then
+		pipeworks.after_place(pos, placer)
 	end
 	meta:set_string("formspec", formspec())
 	update_chest_node(pos)
@@ -409,7 +443,8 @@ minetest.register_node("minerchest:chest", {
 	paramtype = "light",
 	sunlight_propagates = true,
 	paramtype2 = "facedir",
-	groups = { choppy = 2, cracky = 2, crumbly = 2 },
+	groups = { choppy = 2, cracky = 2, crumbly = 2,
+		   tubedevice = 1, tubedevice_receiver = 1 },
 	is_ground_content = false,
 	sounds = default.node_sound_metal_defaults(),
 
@@ -420,6 +455,8 @@ minetest.register_node("minerchest:chest", {
 	on_metadata_inventory_move = on_metadata_inventory_change,
 	on_metadata_inventory_put = on_metadata_inventory_change,
 	on_metadata_inventory_take = on_metadata_inventory_change,
+
+	tube = pipeworks_tube,
 })
 
 minetest.register_node("minerchest:chest_full", {
@@ -439,7 +476,8 @@ minetest.register_node("minerchest:chest_full", {
 	sunlight_propagates = true,
 	paramtype2 = "facedir",
 	groups = { choppy = 2, cracky = 2, crumbly = 2,
-		not_in_creative_inventory = 1 },
+		   tubedevice = 1, tubedevice_receiver = 1,
+		   not_in_creative_inventory = 1 },
 	is_ground_content = false,
 	sounds = default.node_sound_metal_defaults(),
 
@@ -451,6 +489,8 @@ minetest.register_node("minerchest:chest_full", {
 	on_metadata_inventory_move = on_metadata_inventory_change,
 	on_metadata_inventory_put = on_metadata_inventory_change,
 	on_metadata_inventory_take = on_metadata_inventory_change,
+
+	tube = pipeworks_tube,
 })
 
 if use_tubelib then

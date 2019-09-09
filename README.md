@@ -1,4 +1,4 @@
-# MicuPack v2.9
+# MicuPack v2.9.2
 
 **Minetest modpack by (real)micu.**
 
@@ -326,8 +326,9 @@ git clone https://github.com/realmicu/minetest-micupack.git micupack
 * **Miner Chest** (minerchest)
 
   Miner Chest is a high capacity storage chest that automatically combines selected resources
-  into respective blocks.  Chest is compatible with Techpack (Tubelib2 framework). It has
-  capacity of 60 items and supports stack pulling (can be paired with HighPerf Pusher).
+  into respective blocks.  Chest is compatible with Techpack (Tubelib2 framework) and Pipeworks
+  (pneumatic tubes). It has capacity of 60 items. When used with Tubelib it supports stack
+  pulling (can be paired with HighPerf Pusher).
 
   It automatically combines following items in its inventory:
   - all ingots types into respective blocks
@@ -354,6 +355,7 @@ git clone https://github.com/realmicu/minetest-micupack.git micupack
   - automatic crafting of configured items into blocks
   - automatic stack merging
   - Tubelib I/O compatibility
+  - Pipeworks compatibility (accepts input from tubes)
   - support for Tubelib stack pulling (can be paired with HighPerf Pusher)
   - item prioritization for Tubelib pulling (stackable items go last)
   - no defects (not a machine)
