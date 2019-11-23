@@ -3,8 +3,8 @@
 **Minetest modpack by (real)micu.**
 
 **Tested with following Minetest versions running Minetest Game:**
-* **0.4.17.1 (*stable-0.4* branch) - all modpack versions up to v2.61**
-* **5.0.0+ (*stable-5* branch) - from modpack v2.62**
+* **0.4.17.1 (*stable-0.4* branch) - all modpack versions up to v2.6.1**
+* **5.0.0+ (*stable-5* branch) - from modpack v2.6.2**
 
 ### Installation:
 
