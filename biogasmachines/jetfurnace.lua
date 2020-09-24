@@ -275,11 +275,6 @@ local function can_dig(pos, player)
 		and inv:is_empty("fuel")
 end
 
--- cleanup after digging
-local function after_dig_node(pos, oldnode, oldmetadata, digger)
-	tubelib.remove_node(pos)
-end
-
 -- init machine after placement
 local function after_place_node(pos, placer, itemstack, pointed_thing)
 	local meta = minetest.get_meta(pos)
@@ -506,13 +501,12 @@ minetest.register_node("biogasmachines:jetfurnace", {
 	groups = { choppy = 2, cracky = 2, crumbly = 2 },
 	is_ground_content = false,
 	sounds = default.node_sound_metal_defaults(),
-
 	drop = "",
 	can_dig = can_dig,
 
-	after_dig_node = function(pos, oldnode, oldmetadata, digger)
-		machine:after_dig_node(pos, oldnode, oldmetadata, digger)
-		after_dig_node(pos, oldnode, oldmetadata, digger)
+	on_dig = function(pos, node, player)
+		machine:on_dig_node(pos, node, player)
+		tubelib.remove_node(pos)
 	end,
 
 	on_rotate = screwdriver.disallow,
@@ -556,12 +550,6 @@ minetest.register_node("biogasmachines:jetfurnace_active", {
 
 	drop = "",
 	can_dig = can_dig,
-
-	after_dig_node = function(pos, oldnode, oldmetadata, digger)
-		machine:after_dig_node(pos, oldnode, oldmetadata, digger)
-		after_dig_node(pos, oldnode, oldmetadata, digger)
-	end,
-
 	on_rotate = screwdriver.disallow,
 	on_timer = on_timer,
 	on_receive_fields = on_receive_fields,
@@ -589,9 +577,12 @@ minetest.register_node("biogasmachines:jetfurnace_defect", {
 	groups = { choppy = 2, cracky = 2, crumbly = 2, not_in_creative_inventory = 1 },
 	is_ground_content = false,
 	sounds = default.node_sound_metal_defaults(),
-
 	can_dig = can_dig,
-	after_dig_node = after_dig_node,
+
+	after_dig_node = function(pos, oldnode, oldmetadata, digger)
+		tubelib.remove_node(pos)
+	end,
+
 	on_rotate = screwdriver.disallow,
 	allow_metadata_inventory_put = allow_metadata_inventory_put,
 	allow_metadata_inventory_move = allow_metadata_inventory_move,

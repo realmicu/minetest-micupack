@@ -170,6 +170,13 @@ end
 	-------
 ]]--
 
+local function pipeworks_scan_for_pipe(pos)
+end
+
+if minetest.global_exists("pipeworks") then
+	pipeworks_scan_for_pipe = pipeworks.scan_for_pipe_objects
+end
+
 -- get bucket with water (itemstack)
 local function get_water_bucket(inv, listname)
 	local stack = ItemStack({})
@@ -283,14 +290,6 @@ local function can_dig(pos, player)
 	local inv = meta:get_inventory()
 	return inv:is_empty("src") and inv:is_empty("dst")
 		and inv:is_empty("fuel")
-end
-
--- cleanup after digging
-local function after_dig_node(pos, oldnode, oldmetadata, digger)
-	tubelib.remove_node(pos)
-	if minetest.global_exists("pipeworks") then
-		pipeworks.scan_for_pipe_objects(pos)
-	end
 end
 
 -- init machine after placement
@@ -532,9 +531,10 @@ minetest.register_node("biogasmachines:freezer", {
 	drop = "",
 	can_dig = can_dig,
 
-	after_dig_node = function(pos, oldnode, oldmetadata, digger)
-		machine:after_dig_node(pos, oldnode, oldmetadata, digger)
-		after_dig_node(pos, oldnode, oldmetadata, digger)
+	on_dig = function(pos, node, player)
+		machine:on_dig_node(pos, node, player)
+		tubelib.remove_node(pos)
+		pipeworks_scan_for_pipe(pos)
 	end,
 
 	on_rotate = screwdriver.disallow,
@@ -598,12 +598,6 @@ minetest.register_node("biogasmachines:freezer_active", {
 
 	drop = "",
 	can_dig = can_dig,
-
-	after_dig_node = function(pos, oldnode, oldmetadata, digger)
-		machine:after_dig_node(pos, oldnode, oldmetadata, digger)
-		after_dig_node(pos, oldnode, oldmetadata, digger)
-	end,
-
 	on_rotate = screwdriver.disallow,
 	on_timer = on_timer,
 	on_receive_fields = on_receive_fields,
@@ -654,7 +648,12 @@ minetest.register_node("biogasmachines:freezer_defect", {
 			     right = 1 },
 	
 	can_dig = can_dig,
-	after_dig_node = after_dig_node,
+
+	after_dig_node = function(pos, oldnode, oldmetadata, digger)
+		tubelib.remove_node(pos)
+		pipeworks_scan_for_pipe(pos)
+	end,
+
 	on_rotate = screwdriver.disallow,
 	allow_metadata_inventory_put = allow_metadata_inventory_put,
 	allow_metadata_inventory_move = allow_metadata_inventory_move,
