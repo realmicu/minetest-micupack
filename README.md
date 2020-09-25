@@ -1,4 +1,4 @@
-# MicuPack v2.9.2
+# MicuPack v2.9.3
 
 **Minetest modpack by (real)micu.**
 
