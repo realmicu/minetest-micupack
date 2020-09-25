@@ -528,7 +528,6 @@ minetest.register_node("biogasmachines:freezer", {
 			     left = 1,
 			     right = 1 },
 	
-	drop = "",
 	can_dig = can_dig,
 
 	on_dig = function(pos, node, player)
@@ -596,8 +595,6 @@ minetest.register_node("biogasmachines:freezer_active", {
 			     left = 1,
 			     right = 1 },
 
-	drop = "",
-	can_dig = can_dig,
 	on_rotate = screwdriver.disallow,
 	on_timer = on_timer,
 	on_receive_fields = on_receive_fields,

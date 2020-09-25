@@ -624,7 +624,6 @@ minetest.register_node("biogasmachines:compactor", {
 	groups = { choppy = 2, cracky = 2, crumbly = 2 },
 	is_ground_content = false,
 	sounds = default.node_sound_metal_defaults(),
-	drop = "",
 	can_dig = can_dig,
 
 	on_dig = function(pos, node, player)
@@ -681,8 +680,6 @@ minetest.register_node("biogasmachines:compactor_active", {
 	groups = { crumbly = 0, not_in_creative_inventory = 1 },
 	is_ground_content = false,
 	sounds = default.node_sound_metal_defaults(),
-	drop = "",
-	can_dig = can_dig,
 	on_rotate = screwdriver.disallow,
 	on_timer = on_timer,
 	on_receive_fields = on_receive_fields,
