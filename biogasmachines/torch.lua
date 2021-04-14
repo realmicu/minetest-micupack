@@ -85,6 +85,7 @@ for _, i in ipairs(materials) do
 		walkable = false,
 		liquids_pointable = false,
 		light_source = 12,
+		use_texture_alpha = biogasmachines.texture_alpha_mode,
 		groups = { cracky = 2, dig_immediate = 3, attached_node = 1, torch = 1 },
 		drop = basename,
 		selection_box = {
@@ -140,6 +141,7 @@ for _, i in ipairs(materials) do
 		sunlight_propagates = true,
 		walkable = false,
 		light_source = 12,
+		use_texture_alpha = biogasmachines.texture_alpha_mode,
 		groups = { cracky = 2, dig_immediate = 3, attached_node = 1, torch = 1, not_in_creative_inventory = 1 },
 		drop = basename,
 		selection_box = {
@@ -168,6 +170,7 @@ for _, i in ipairs(materials) do
 		sunlight_propagates = true,
 		walkable = false,
 		light_source = 12,
+		use_texture_alpha = biogasmachines.texture_alpha_mode,
 		groups = { cracky = 2, dig_immediate = 3, attached_node = 1, torch = 1, not_in_creative_inventory = 1 },
 		drop = basename,
 		selection_box = {

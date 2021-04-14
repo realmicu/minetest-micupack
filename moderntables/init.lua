@@ -31,6 +31,9 @@
 
 moderntables = {}
 
+local texture_alpha_mode = minetest.features.use_texture_alpha_string_modes
+	and "clip" or true
+
 local table_nodebox = {
 	{ -0.5, 0.375, -0.5, 0.5, 0.5, 0.5 },
 	{ -0.5, -0.5, -0.5, -0.375, 0.375, -0.375 },
@@ -108,6 +111,7 @@ local function register_simple_wood_table(subname, description)
         	paramtype2 = "facedir",
         	place_param2 = 0,
         	is_ground_content = false,
+		use_texture_alpha = texture_alpha_mode,
         	groups = { choppy = 2, oddly_breakable_by_hand = 2,
 			flammable = 2, },
         	sounds = default.node_sound_wood_defaults(),
@@ -153,6 +157,7 @@ local function register_storage_wood_table(subname, description)
 		paramtype = "light",
 		paramtype2 = "facedir",
 		is_ground_content = false,
+		use_texture_alpha = texture_alpha_mode,
 		groups = { choppy = 2, oddly_breakable_by_hand = 2,
 			flammable = 2, },
 		sounds = default.node_sound_wood_defaults(),
@@ -207,6 +212,7 @@ local function register_simple_metal_table(subname, description)
 		paramtype2 = "facedir",
 		place_param2 = 0,
 		is_ground_content = false,
+		use_texture_alpha = texture_alpha_mode,
 		groups = { choppy = 2, cracky = 2, crumbly = 2,
 			oddly_breakable_by_hand = 2, },
 		sounds = default.node_sound_metal_defaults(),
@@ -250,6 +256,7 @@ local function register_storage_metal_table(subname, description)
 		paramtype = "light",
 		paramtype2 = "facedir",
 		is_ground_content = false,
+		use_texture_alpha = texture_alpha_mode,
 		groups = { choppy = 2, cracky = 2, crumbly = 2,
 			oddly_breakable_by_hand = 2, },
 		sounds = default.node_sound_metal_defaults(),
@@ -328,6 +335,7 @@ if minetest.global_exists("tubelib") then
 		paramtype2 = "facedir",
 		place_param2 = 0,
 		is_ground_content = false,
+		use_texture_alpha = texture_alpha_mode,
 		groups = { choppy = 2, cracky = 2, crumbly = 2 },
 		sounds = default.node_sound_wood_defaults(),
 		on_rotate = screwdriver.disallow,
@@ -356,6 +364,7 @@ if minetest.global_exists("tubelib") then
 		paramtype = "light",
 		paramtype2 = "facedir",
 		is_ground_content = false,
+		use_texture_alpha = texture_alpha_mode,
 		groups = { choppy = 2, cracky = 2, crumbly = 2 },
 		sounds = default.node_sound_wood_defaults(),
 		formspec = inv_formspec,
@@ -388,6 +397,7 @@ if minetest.global_exists("tubelib") then
 		paramtype2 = "facedir",
 		place_param2 = 0,
 		is_ground_content = false,
+		use_texture_alpha = texture_alpha_mode,
 		groups = { choppy = 2, cracky = 2, crumbly = 2 },
 		sounds = default.node_sound_metal_defaults(),
 		on_rotate = screwdriver.disallow,
@@ -416,6 +426,7 @@ if minetest.global_exists("tubelib") then
 		paramtype = "light",
 		paramtype2 = "facedir",
 		is_ground_content = false,
+		use_texture_alpha = texture_alpha_mode,
 		groups = { choppy = 2, cracky = 2, crumbly = 2 },
 		sounds = default.node_sound_metal_defaults(),
 		formspec = inv_formspec,
@@ -449,6 +460,7 @@ if minetest.global_exists("tubelib") then
 		sunlight_propagates = true,
 		paramtype2 = "facedir",
 		place_param2 = 0,
+		use_texture_alpha = texture_alpha_mode,
 		groups = { choppy = 2, cracky = 2, crumbly = 2 },
 		is_ground_content = false,
 		sounds = default.node_sound_wood_defaults(),

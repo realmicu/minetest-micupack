@@ -1,19 +1,2 @@
-
-Future plans:
-	* add SaferLua command to query device and return its type and, optionally,
-	  custom text field (helps to locate defects in complex machinery)
-	* introduce enhanced machine statictics including:
-	  + counters for items in and items out
-	  + biogas used counter
-	  + ice counter for compactor
-	  + pipe connection status for freezer
-	  + usage: ticks running, ticks standby, ticks blocked, total ticks etc
-	  and evaluate possible expansion of SaferLua controller '$commands' with
-	  functions to read and reset above fields
-	* Metal Recycler - decomposing device to retrieve metal ingots, Mese shards
-	  and Diamonds from all items and nodes that were crafted from these resources;
-	  device will return random number of ingots and shards - between 1 and craft
-	  quantity; Mese crystals will be converted to shards for calculation purposes;
-	  fuelled by moderate volume of Biogas; robust recipe parser is required for
-	  this device
-
+* Fix and update formspecs
+* Register machines under unified_inventory "automation" cathegory

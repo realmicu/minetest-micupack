@@ -15,6 +15,9 @@
 
 slmodules = {}
 
+slmodules.texture_alpha_mode = minetest.features.use_texture_alpha_string_modes
+        and "clip" or true
+
 dofile(minetest.get_modpath("slmodules") .. "/furnacemonitor.lua")
 dofile(minetest.get_modpath("slmodules") .. "/digitalswitch.lua")
 dofile(minetest.get_modpath("slmodules") .. "/autosievesensor.lua")

@@ -198,6 +198,7 @@ minetest.register_node("slmodules:digilinesrelay", {
 	paramtype = "light",
 	sunlight_propagates = true,
 	paramtype2 = "facedir",
+	use_texture_alpha = slmodules.texture_alpha_mode,
 	groups = { choppy = 2, cracky = 2, crumbly = 2 },
 	is_ground_content = false,
 	sounds = default.node_sound_metal_defaults(),

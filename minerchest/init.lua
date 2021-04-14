@@ -68,6 +68,9 @@
 
 minerchest = {}
 
+local texture_alpha_mode = minetest.features.use_texture_alpha_string_modes
+	and "clip" or true
+
 local INV_X = 12
 local INV_Y = 5
 local INV_SIZE = INV_X * INV_Y
@@ -443,6 +446,7 @@ minetest.register_node("minerchest:chest", {
 	paramtype = "light",
 	sunlight_propagates = true,
 	paramtype2 = "facedir",
+	use_texture_alpha = texture_alpha_mode,
 	groups = { choppy = 2, cracky = 2, crumbly = 2,
 		   tubedevice = 1, tubedevice_receiver = 1 },
 	is_ground_content = false,
@@ -475,6 +479,7 @@ minetest.register_node("minerchest:chest_full", {
 	paramtype = "light",
 	sunlight_propagates = true,
 	paramtype2 = "facedir",
+	use_texture_alpha = texture_alpha_mode,
 	groups = { choppy = 2, cracky = 2, crumbly = 2,
 		   tubedevice = 1, tubedevice_receiver = 1,
 		   not_in_creative_inventory = 1 },

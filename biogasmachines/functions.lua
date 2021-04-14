@@ -47,6 +47,10 @@ local ctable = {
 	------
 ]]--
 
+-- Texture alpha mode
+biogasmachines.texture_alpha_mode = minetest.features.use_texture_alpha_string_modes
+	and "clip" or true
+
 -- Check if machine is connected to pipe network and water flows into machine
 -- Parameters: node position, node object (optional)
 -- Returns: true if water is flowing into device node
