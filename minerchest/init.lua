@@ -600,3 +600,7 @@ if minetest.global_exists("technic") then
 	minerchest.allow_item_combine("technic:zinc_ingot", "technic:zinc_block")
 	minerchest.allow_item_combine("technic:chromium_ingot", "technic:chromium_block")
 end
+
+if minetest.global_exists("ethereal") then
+	minerchest.allow_item_combine("ethereal:crystal_ingot", "ethereal:crystal_block")
+end
